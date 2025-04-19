@@ -39,7 +39,7 @@ python src/run_eval.py
 
 Place model config files in the `models/` directory. Each config must include:
 
-- `type`: Inference backend type
+- `engine`: Inference backend type
 - `model`: Model name  
 - (Additional backend-specific parameters as needed)
 
@@ -51,10 +51,10 @@ python src/run_eval.py --config path/to/config.yaml
 
 ## Without Config Files
 
-You can run without a config by specifying `--type` and `--model` directly:
+You can run without a config by specifying `--engine` and `--model` directly:
 
 ```bash
-python src/run_eval.py --type openai --model gpt-4.1
+python src/run_eval.py --engine openai --model gpt-4.1
 ```
 
 ## Parameters
@@ -63,17 +63,33 @@ python src/run_eval.py --type openai --model gpt-4.1
 Use one of:  
 - `--config`: Path to model config file  
 **or**  
-- `--type`: Backend type  
-- `--model`: Model name
+- `--engine`: Backend type (e.g. openai)
+- `--model`: Model name (e.g. gpt-4.1)
 
 **Optional**  
 - `--system_prompt`: Custom system prompt  
 - `--params`: Override parameters (JSON format), e.g. `'{ "temperature": 0.7, "top_k": 5 }'`  
+- `--batch_size`: Batch size for batch execution (default: no batch). Set to -1 to set the whole dataset as a batch.
 - `--output_dir`: Output directory (default: `eval/datasets/type/model`)  
 - `--datasets`: Comma-separated dataset folders (default: `FSC-147,GeckoNum,PixMo_Count,TallyQA`)  
 
 
 ## Supported Backends
-**openai**
 
-For OpenAI API models. Requires `OPENAI_API_KEY` set in `.env`.
+### openai
+
+For OpenAI-style API models. Requires `OPENAI_API_KEY` set in `.env`.
+
+Batch execution can take up to 24 hours and must be retrieved manually. Retrieve the file as below:
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+const batch = client.batches.retrieve(batch_id)
+print(batch) # Check status. Should be 'completed'
+
+file_response = client.files.content(batch_id)
+print(file_response.text)
+```

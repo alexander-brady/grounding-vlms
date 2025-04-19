@@ -2,6 +2,7 @@ import os
 import yaml
 import json
 import argparse
+import time
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -32,7 +33,7 @@ def build_config(args: argparse.Namespace) -> dict:
             
     else:
         config = {
-            "type": args.type,
+            "engine": args.engine,
             "model": args.model,
         }
             
@@ -45,50 +46,67 @@ def build_config(args: argparse.Namespace) -> dict:
     return config
 
 
-
 def main(args):
     """
-    Run evaluation on a model.
+    Run evaluation on the datasets using the specified model.
     Args:
         args (argparse.Namespace): The command line arguments.
     """
     load_dotenv()
     config = build_config(args)
-    model = load_model(config["type"], **config)
+    model = load_model(config["engine"], **config)
+    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
     
-    output_dir = root() / args.output_dir
+    output_dir = root() / args.output_dir / timestamp
     os.makedirs(output_dir, exist_ok=True)
     
     datasets = args.datasets.split(",")
     for dataset in datasets:
         dataset = dataset.strip()
-        dataset_path = root() / "eval" / "datasets" / (dataset if dataset.endswith(".csv") else f"{dataset}.csv")
+        dataset_path = root() / "eval" / "datasets" / dataset.replace(".csv", "")
         
-        if not dataset_path.exists():
+        if not(dataset_path / "dataset.csv").exists():
             raise FileNotFoundError(f"Dataset {dataset} not found at {dataset_path}")
         
         print(f"Evaluating on {dataset}...")
-        df = pd.read_csv(dataset_path)
-        df.apply(
-            lambda row: model.eval(row["prompt"], row["image_url"]),
-            axis=1,
-            result_type="expand"
-        ).to_csv(
-            output_dir / f"{dataset}_results.csv",
-            index=False
-        )
+        df = pd.read_csv(dataset_path / "dataset.csv")
+        if args.batch_size == 1:
+            df.apply(
+                lambda row: model.eval(row["prompt"], model.process_image(dataset_path, **row.to_dict())),
+                axis=1, 
+                result_type="expand"
+            ).to_csv(
+                output_dir / dataset / "results.csv",
+                index=False
+            )
         
+        elif args.batch_size == -1:
+            model.eval_batch(
+                args.output_dir / dataset,
+                df["prompt"].tolist(),
+                df.apply(lambda row: model.process_image(dataset_path, **row.to_dict()), axis=1).tolist()
+            )
+        else:
+            for i in range(0, len(df), args.batch_size):
+                batch = df.iloc[i:i + args.batch_size]
+                model.eval_batch(
+                    args.output_dir / dataset,
+                    batch["prompt"].tolist(),
+                    batch.apply(lambda row: model.process_image(dataset_path, **row.to_dict()), axis=1).tolist()
+                )     
         
 def parse_args():
+    '''Parse command line arguments.'''
     parser = argparse.ArgumentParser(description="Run evaluation on a model.")
     
-    parser.add_argument("--config", help="Path to the config file (e.f. openai/gpt-4.1)")
+    parser.add_argument("--config", help="Path to the config file (e.g. openai/gpt-4.1)")
     
-    parser.add_argument("--type", help="Type of model to evaluate (only if config is not provided)")
+    parser.add_argument("--engine", help="Backend of model to evaluate (only if config is not provided)")
     parser.add_argument("--model", help="Name of the model to evaluate (only if config is not provided)")
     
     parser.add_argument("--system_prompt", help="System prompt to initialize the model")
     parser.add_argument("--params", type=json.loads, help="Extra params as JSON string")
+    parser.add_argument('--batch_size', type=int, default=1, help='Batch size for evaluation. -1 for all at once')
     
     parser.add_argument(
         "--datasets", 
@@ -101,7 +119,7 @@ def parse_args():
     args = parser.parse_args()
     
     if not args.config:
-        missing = [ arg for arg in ["type", "model"] if not getattr(args, arg)]
+        missing = [ arg for arg in ["engine", "model"] if not getattr(args, arg)]
         if missing:
             parser.error(f"Missing required arguments: config or ({' + '.join(missing)})")
             
@@ -112,6 +130,7 @@ def parse_args():
             args.output_dir = "eval" / "results" / args.type / args.model
             
     return args
+
         
 if __name__ == "__main__":
     args = parse_args()
