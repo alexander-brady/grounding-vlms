@@ -4,6 +4,7 @@ import json
 import argparse
 
 from pathlib import Path
+from dotenv import load_dotenv
 from models import load_model
 
 import pandas as pd
@@ -51,6 +52,7 @@ def main(args):
     Args:
         args (argparse.Namespace): The command line arguments.
     """
+    load_dotenv()
     config = build_config(args)
     model = load_model(config["type"], **config)
     

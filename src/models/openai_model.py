@@ -8,7 +8,6 @@ class OpenAIModel(BaseModel):
             model (str): The model to use (e.g. "gpt-4.1").
             **params: Additional arguments for the model (temperature, max_tokens, etc.)
         """
-        super().__init__()
         self.client = OpenAI()
         
         self.model = model

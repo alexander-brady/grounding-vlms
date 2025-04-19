@@ -1,4 +1,4 @@
-from .openai import OpenAIModel
+from .openai_model import OpenAIModel
 
 def load_model(model_name: str, **kwargs):
     """
