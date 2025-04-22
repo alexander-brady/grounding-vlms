@@ -8,8 +8,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from models import load_model
 
-import pandas as pd
-
 
 def root() -> Path:
     """
@@ -40,6 +38,9 @@ def build_config(args: argparse.Namespace) -> dict:
     if args.system_prompt:
         config["system_prompt"] = args.system_prompt
         
+    if args.processor:
+        config["processor"] = args.processor
+        
     if args.params:
         config.update(args.params)
             
@@ -68,32 +69,9 @@ def main(args):
         if not(dataset_path / "dataset.csv").exists():
             raise FileNotFoundError(f"Dataset {dataset} not found at {dataset_path}")
         
-        print(f"Evaluating on {dataset}...")
-        df = pd.read_csv(dataset_path / "dataset.csv")
-        if args.batch_size == 1:
-            df.apply(
-                lambda row: model.eval(row["prompt"], model.process_image(dataset_path, **row.to_dict())),
-                axis=1, 
-                result_type="expand"
-            ).to_csv(
-                output_dir / dataset / "results.csv",
-                index=False
-            )
+        print(f"Evaluating on {dataset}...")        
+        model.eval(output_dir, dataset_path, args.batch_size)
         
-        elif args.batch_size == -1:
-            model.eval_batch(
-                args.output_dir / dataset,
-                df["prompt"].tolist(),
-                df.apply(lambda row: model.process_image(dataset_path, **row.to_dict()), axis=1).tolist()
-            )
-        else:
-            for i in range(0, len(df), args.batch_size):
-                batch = df.iloc[i:i + args.batch_size]
-                model.eval_batch(
-                    args.output_dir / dataset,
-                    batch["prompt"].tolist(),
-                    batch.apply(lambda row: model.process_image(dataset_path, **row.to_dict()), axis=1).tolist()
-                )     
         
 def parse_args():
     '''Parse command line arguments.'''
@@ -105,6 +83,8 @@ def parse_args():
     parser.add_argument("--model", help="Name of the model to evaluate (only if config is not provided)")
     
     parser.add_argument("--system_prompt", help="System prompt to initialize the model")
+    parser.add_argument("--processor", help="Processor/tokenizer to use for the model, defaults to model name")
+    
     parser.add_argument("--params", type=json.loads, help="Extra params as JSON string")
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size for evaluation. -1 for all at once')
     

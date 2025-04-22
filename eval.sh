@@ -13,4 +13,5 @@ source ~/.venv/bin/activate
 
 srun python src/run_eval.py \
   --config openai/gpt-4.1 \ 
+  --batch_size -1 \
   --output_dir results/benchmark \

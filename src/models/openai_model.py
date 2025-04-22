@@ -1,4 +1,4 @@
-import json
+import json, base64
 
 from .base import BaseModel
 from openai import OpenAI
@@ -6,6 +6,11 @@ from pathlib import Path
 
 class OpenAIModel(BaseModel):
     '''Evaluation for models using OpenAI-style APIs.'''
+    
+    def __str__(self):
+        return "openai"
+    
+        
     def __init__(self, model: str, engine=OpenAI, **params):
         """
         Args:
@@ -13,6 +18,7 @@ class OpenAIModel(BaseModel):
             engine (callable): The engine to use for the model (default: OpenAI).
             **params: Additional arguments for the model (temperature, max_tokens, etc.)
         """
+        super().__init__()
         self.client = engine()
         
         self.model = model
@@ -20,11 +26,11 @@ class OpenAIModel(BaseModel):
         
         self.system = [{
             "role": "system",
-            "content": self.system_prompt,
+            "content": params.system_prompt,
         }] if 'system_prompt' in params else []
     
         
-    def eval(self, prompt: str, image_url: str) -> str:
+    def eval_single(self, prompt: str, image_url: str) -> str:
         """
         Return the model's response to the prompt and image.
         Args:
@@ -45,6 +51,7 @@ class OpenAIModel(BaseModel):
                             "type": "image_url",
                             "image_url": {
                                 "url": image_url,
+                                "detail": "auto",
                             },
                         },
                     ],
@@ -67,10 +74,9 @@ class OpenAIModel(BaseModel):
             image_urls (list): The urls of the images to ask the model about.
             
         Returns:
-            list: The model's responses.
+            []: Empty list, results must be retrieved manually.
         """
-        if len(prompts) != len(image_urls):
-            raise ValueError("The number of prompts and image URLs must be the same.")
+        assert len(prompts) == len(image_urls), "Number of prompts and images must match."
         
         with open(output_dir / "input.jsonl", "w") as f:
             for i, (prompt, image_url) in enumerate(zip(prompts, image_urls)):
@@ -112,4 +118,27 @@ class OpenAIModel(BaseModel):
             batch_input_file_id, "Retrieve it in 24 hours."
         )
         
-        return batch_input_file_id
+        return []
+    
+    
+    def process_image(self, dataset_path: Path, image_url: str=None, file_name: str=None) -> str:
+        """
+        Process the image and return its URL.
+        
+        Args:
+            dataset_path (pathlib.Path): The path to the dataset directory.
+            image_url (str): The URL of the image to process.
+            file_name (str): The path to the image file to process.
+            
+        Returns:
+            str: The processed image URL.
+        """
+        if image_url:
+            return image_url
+        
+        elif file_name:
+            with open(dataset_path / file_name, "rb") as f:
+                return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode("utf-8")}"
+            
+        else:
+            raise ValueError("Either image_url or image_path must be provided.")

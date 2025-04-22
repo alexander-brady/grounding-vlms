@@ -1,4 +1,5 @@
 from .openai_model import OpenAIModel
+from .hf_model import HuggingFaceModel
 
 def load_model(model_name: str, **kwargs):
     """
@@ -13,6 +14,7 @@ def load_model(model_name: str, **kwargs):
     """
     model_map = {
         "openai": OpenAIModel,
+        "huggingface": HuggingFaceModel,
         # Add other models here as needed
     }
     
