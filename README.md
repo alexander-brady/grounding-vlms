@@ -76,6 +76,7 @@ Use one of:
 
 
 ## Supported Backends
+> Set the backend using the `engine` parameter
 
 ### openai
 
