@@ -30,12 +30,17 @@ class BaseModel:
         assert "image_url" in df.columns or "file_name" in df.columns, "DataFrame must contain an 'image_url' or 'file_name' column."
         
         items = [
-            (idx, row["prompt"], self.process_image(dataset_dir, image_url=row.get("image_url"), file_name=row.get("file_name")))
+            (idx, row["prompt"], self.process_image(
+                dataset_dir, 
+                image_url=row.get("image_url"), 
+                file_name=row.get("file_name")
+            ))
             for idx, row in df.iterrows()
         ]
         
         batch_size = batch_size if batch_size > 0 else len(items)
         os.makedirs(output_dir, exist_ok=True)
+        
         # write results to “<output_dir>/<model_name>_results.csv”
         result_file = output_dir / f"{self}_results.csv"
         with open(result_file, "w") as f:

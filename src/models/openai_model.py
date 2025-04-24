@@ -29,6 +29,36 @@ class OpenAIModel(BaseModel):
             "content": params["system_prompt"],
         }] if 'system_prompt' in params else []
     
+    
+    def api_body(self, prompt: str, image_url: str) -> dict:
+        """
+        Create the body for the API request.
+        Args:
+            prompt (str): The prompt to ask the model.
+            image_url (str): The url of the image to ask the model about.
+        Returns:
+            list: The messages to send to the model.
+        """
+        image_type = "input_image" if image_url.startswith("data:") else "image_url"
+        messages = self.system + [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": image_type,
+                    "image_url": {
+                        "url": image_url,
+                        "detail": "high"
+                    },
+                }
+            ],
+        }]
+        
+        return {
+            "model": self.model,
+            "messages": messages,
+            **self.params
+        }
         
     def eval_single(self, prompt: str, image_url: str) -> str:
         """
@@ -41,28 +71,12 @@ class OpenAIModel(BaseModel):
             str: The model's response.
         """
         try:
-            if image_url.startswith("data:"):
-                img_msg = {"type": "input_image", "image_url": image_url, "detail": "high"}
-            else:
-                img_msg = {
-                    "type": "image_url",
-                    "image_url": image_url,
-                    "detail": "high"
-            }
-
             response = self.client.chat.completions.create(
-                model=self.model,
-                messages=self.system + [{
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": prompt},
-                        img_msg,
-                    ],
-                }],
-                **self.params
+                **self.api_body(prompt, image_url)
             )
         except Exception as e:
             raise Exception(f"Error: {e}")
+        
         return response.choices[0].message["content"]
 
 
@@ -78,40 +92,29 @@ class OpenAIModel(BaseModel):
             []: Empty list, results must be retrieved manually.
         """
         assert len(prompts) == len(image_urls), "Number of prompts and images must match."
-        
-        with open(output_dir / "input.jsonl", "w") as f:
-            for i, (prompt, image_url) in enumerate(zip(prompts, image_urls)):
-                if image_url.startswith("data:"):
-                    img_msg = {"type": "input_image", "image_url": image_url, "detail": "high"}
-                else:
-                    img_msg = {
-                        "type": "image_url",
-                        "image_url": image_url,
-                        "detail": "high"
-                }
 
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        batch_file = output_dir / "input.jsonl"
+        if batch_file.exists():
+            batch_file.unlink()
+            
+        with open(batch_file, "w") as f:
+            for i, (prompt, image_url) in enumerate(zip(prompts, image_urls)):
                 message = {
                     "custom_id": str(i),
                     "method": "POST",
                     "url": "/v1/chat/completions",
-                    "body": {
-                        "model": self.model,
-                        "messages": self.system + [{
-                            "role": "user",
-                            "content": [
-                                {"type": "input_text", "text": prompt},
-                                img_msg,
-                            ],
-                        }],
-                        **self.params
-                    }
+                    "body": self.api_body(prompt, image_url)
                 }
                 f.write(json.dumps(message) + "\n")
                 
         batch_input_file = self.client.files.create(
-            file=open(output_dir / "input.jsonl", "rb"),
+            file=open(batch_file, "rb"),
             purpose="batch"
         )
+        
+        batch_file.unlink()
         
         batch_input_file_id = batch_input_file.id
         batch = self.client.batches.create(
@@ -124,8 +127,10 @@ class OpenAIModel(BaseModel):
         )
         
         print(
-            "Batch input file created and batch started. Batch ID:", 
-            batch.id, "File ID:", batch_input_file_id, "Retrieve it in 24 hours."
+            "Batch input file created and batch started.",
+            "\nBatch ID:", batch.id, 
+            "\nFile ID:", batch_input_file_id, 
+            "\nRetrieve in 24 hours. (see src/retrieval.ipynb)"
         )
         
         return []
