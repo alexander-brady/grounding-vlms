@@ -72,7 +72,7 @@ class OpenAIModel(Evaluator):
            'type': 'json_schema',
            'json_schema': 
               {
-                "name":"whocares", 
+                "name":"ObjectCount", 
                 "schema": to_strict_json_schema(ObjectCount)
               }
         }
