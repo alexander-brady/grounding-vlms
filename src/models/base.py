@@ -1,4 +1,4 @@
-import os
+import os, time
 from io import BytesIO
 from pathlib import Path
 
@@ -41,8 +41,10 @@ class Evaluator:
         batch_size = batch_size if batch_size > 0 else len(items)
         os.makedirs(output_dir, exist_ok=True)
         
-        # write results to “<output_dir>/<model_name>_results.csv”
-        result_file = output_dir / f"{self}_results.csv"
+        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
+                
+        # write results to “<output_dir>/<timestamp>.csv”
+        result_file = output_dir / f"{timestamp}.csv"
         with open(result_file, "w") as f:
             f.write("idx,result\n")
             

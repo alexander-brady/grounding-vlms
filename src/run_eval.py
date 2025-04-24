@@ -56,17 +56,14 @@ def main(args):
     load_dotenv()
     config = build_config(args)
     engine = config.pop("engine")
+    
     model = load_model(engine, **config)
-    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
     
-    out_path = Path(args.output_dir)
+    output_dir = Path(args.output_dir)
     # if user passed an absolute path, use it directly; otherwise prepend project root
-    if not out_path.is_absolute():
-        out_path = root() / out_path
-    output_dir = out_path / timestamp
-    
-    os.makedirs(output_dir, exist_ok=True)
-    
+    if not output_dir.is_absolute():
+        output_dir = root() / output_dir
+        
     datasets = args.datasets.split(",")
     for dataset in datasets:
         dataset = dataset.strip()
@@ -113,7 +110,7 @@ def parse_args():
         if args.config:
             args.output_dir = f"eval/results/{args.config.replace(".yaml", "")}"
         else:
-            args.output_dir = f"eval/results/{args.type}/{args.model}"
+            args.output_dir = f"eval/results/{args.engine}/{args.model}"
             
     return args
 
