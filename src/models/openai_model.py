@@ -23,12 +23,16 @@ class OpenAIModel(BaseModel):
         self.client = client()
         
         openai_params = {
-            "temperature", "frequency_penalty", "max_completion_tokens", 
-            "reasoning_effort", "seed", "top_p"
+            "temperature", "frequency_penalty", 
+            "max_completion_tokens", "top_p",
+            "reasoning_effort", "seed", 
         }
         
         self.model = model
-        self.params = {key: value for key, value in params.items() if key in openai_params}
+        self.params = {
+            key: value for key, value 
+            in params.items() if key in openai_params
+        }
         
         self.system = [{
             "role": "system",
@@ -45,13 +49,12 @@ class OpenAIModel(BaseModel):
         Returns:
             list: The messages to send to the model.
         """
-        image_type = "image_url"
         messages = self.system + [{
             "role": "user",
             "content": [
                 {"type": "text", "text": prompt},
                 {
-                    "type": image_type,
+                    "type": "image_url",
                     "image_url": {
                         "url": image_url,
                         "detail": "high"
