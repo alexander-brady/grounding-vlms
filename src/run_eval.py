@@ -111,9 +111,9 @@ def parse_args():
             
     if not args.output_dir:
         if args.config:
-            args.output_dir = "eval" / "results" / args.config.replace(".yaml", "")
+            args.output_dir = f"eval/results/{args.config.replace(".yaml", "")}"
         else:
-            args.output_dir = "eval" / "results" / args.type / args.model
+            args.output_dir = f"eval/results/{args.type}/{args.model}"
             
     return args
 
