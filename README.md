@@ -76,6 +76,7 @@ Use one of:
 
 
 ## Supported Backends
+> Set the backend using the `engine` parameter
 
 ### openai
 
@@ -88,7 +89,7 @@ from openai import OpenAI
 
 client = OpenAI()
 
-const batch = client.batches.retrieve(batch_id)
+batch = client.batches.retrieve(batch_id)
 print(batch) # Check status. Should be 'completed'
 
 file_response = client.files.content(batch_id)
