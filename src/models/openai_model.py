@@ -39,7 +39,7 @@ class OpenAIModel(BaseModel):
         Returns:
             list: The messages to send to the model.
         """
-        image_type = "input_image" if image_url.startswith("data:") else "image_url"
+        image_type = "image_url"
         messages = self.system + [{
             "role": "user",
             "content": [
