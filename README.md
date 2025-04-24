@@ -80,22 +80,12 @@ Use one of:
 
 ### openai
 
-For OpenAI-style API models. Requires `OPENAI_API_KEY` set in `.env`.
+For OpenAI-style API models. Requires `OPENAI_API_KEY` set in `.env`. Uses OpenAI chat completions by default.
 
-Batch execution can take up to 24 hours and must be retrieved manually. Retrieve the file as below:
+Supported params:
+`temperature`, `frequency_penalty`, `max_completion_tokens`, `reasoning_effort`, `seed`, `top_p`
 
-```python
-from openai import OpenAI
-
-client = OpenAI()
-
-batch = client.batches.retrieve(batch_id)
-print(batch) # Check status. Should be 'completed'
-
-file_response = client.files.content(batch_id)
-print(file_response.text)
-```
-
+Batch execution can take up to 24 hours and must be retrieved manually. File retrieval can be done with `src/retrieval.ipynb`.
 
 ### huggingface
 

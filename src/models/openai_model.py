@@ -11,23 +11,29 @@ class OpenAIModel(BaseModel):
         return "openai"
     
         
-    def __init__(self, model: str, engine=OpenAI, **params):
+    def __init__(self, model: str, client=OpenAI, system_prompt: str=None, **params):
         """
         Args:
             model (str): The model to use (e.g. "gpt-4.1").
-            engine (callable): The engine to use for the model (default: OpenAI).
-            **params: Additional arguments for the model (temperature, max_tokens, etc.)
+            client (callable): The client to use for the model (default: OpenAI).
+            system_prompt (str): The system prompt to use for the model.
+            **params: Additional arguments for the model (temperature, max_completion_tokens, etc.)
         """
         super().__init__()
-        self.client = engine()
+        self.client = client()
+        
+        openai_params = {
+            "temperature", "frequency_penalty", "max_completion_tokens", 
+            "reasoning_effort", "seed", "top_p"
+        }
         
         self.model = model
-        self.params = params
+        self.params = {key: value for key, value in params.items() if key in openai_params}
         
         self.system = [{
             "role": "system",
-            "content": params["system_prompt"],
-        }] if 'system_prompt' in params else []
+            "content": system_prompt
+        }] if system_prompt else []
     
     
     def api_body(self, prompt: str, image_url: str) -> dict:
