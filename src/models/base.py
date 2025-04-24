@@ -7,7 +7,7 @@ import requests
 from PIL import Image
 
 
-class BaseModel:
+class Evaluator:
     def __init__(self, device: str = "cpu"):
         self.device = device
         

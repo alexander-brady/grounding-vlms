@@ -1,10 +1,14 @@
 import json, base64
+from pydantic import BaseModel
 
-from .base import BaseModel
+from .base import Evaluator
 from openai import OpenAI
 from pathlib import Path
 
-class OpenAIModel(BaseModel):
+class ObjectCount(BaseModel):
+    count: int
+
+class OpenAIModel(Evaluator):
     '''Evaluation for models using OpenAI-style APIs.'''
     
     def __str__(self):
@@ -66,6 +70,7 @@ class OpenAIModel(BaseModel):
         return {
             "model": self.model,
             "messages": messages,
+            "response_format": ObjectCount,
             **self.params
         }
         
@@ -80,7 +85,7 @@ class OpenAIModel(BaseModel):
             str: The model's response.
         """
         try:
-            response = self.client.chat.completions.create(
+            response = self.client.chat.completions.parse(
                 **self.api_body(prompt, image_url)
             )
         except Exception as e:

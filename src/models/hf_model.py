@@ -2,9 +2,9 @@ import torch
 from PIL import Image
 from transformers import AutoModelForVision2Seq, AutoProcessor
 
-from .base import BaseModel
+from .base import Evaluator
 
-class HuggingFaceModel(BaseModel):
+class HuggingFaceModel(Evaluator):
     '''Evaluation for models from huggingface.co.'''
     
     def __str__(self):
