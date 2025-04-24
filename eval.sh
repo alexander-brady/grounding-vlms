@@ -7,11 +7,9 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
+#SBATCH --account=pmlr
 
 
-source ~/.venv/bin/activate
+source /work/scratch/teilers/.venv/bin/activate
 
-srun python src/run_eval.py \
-  --config openai/gpt-4.1 \ 
-  --batch_size -1 \
-  --output_dir results/benchmark \
+srun -A pmlr -t 5 python src/run_eval.py --config openai/gpt-4-1 --batch_size -1 --datasets "Sample" --output_dir /work/scratch/teilers/results/benchmark

@@ -36,7 +36,9 @@ class BaseModel:
         
         batch_size = batch_size if batch_size > 0 else len(items)
         os.makedirs(output_dir, exist_ok=True)
-        with open(output_dir / str(self) + "_results.csv", "w") as f:
+        # write results to “<output_dir>/<model_name>_results.csv”
+        result_file = output_dir / f"{self}_results.csv"
+        with open(result_file, "w") as f:
             f.write("idx,result\n")
             
             if batch_size == 1:
@@ -49,9 +51,9 @@ class BaseModel:
                 for i in range(0, len(items), batch_size):
                     batch = items[i:i + batch_size]
                     
-                    idxs = batch.map(lambda x: x[0])
-                    prompts = batch.map(lambda x: x[1])
-                    images = batch.map(lambda x: x[2])
+                    idxs   = [x[0] for x in batch]
+                    prompts = [x[1] for x in batch]
+                    images  = [x[2] for x in batch]
                     
                     results = self.eval_batch(output_dir, prompts, images)
                     

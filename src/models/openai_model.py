@@ -26,7 +26,7 @@ class OpenAIModel(BaseModel):
         
         self.system = [{
             "role": "system",
-            "content": params.system_prompt,
+            "content": params["system_prompt"],
         }] if 'system_prompt' in params else []
     
         
@@ -41,30 +41,31 @@ class OpenAIModel(BaseModel):
             str: The model's response.
         """
         try:
+            if image_url.startswith("data:"):
+                img_msg = {"type": "input_image", "image_url": image_url, "detail": "high"}
+            else:
+                img_msg = {
+                    "type": "image_url",
+                    "image_url": image_url,
+                    "detail": "high"
+            }
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=self.system + [{
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_url,
-                                "detail": "auto",
-                            },
-                        },
+                        {"type": "input_text", "text": prompt},
+                        img_msg,
                     ],
                 }],
                 **self.params
             )
-        
         except Exception as e:
             raise Exception(f"Error: {e}")
-        
-        return response.choices[0].message['content']
-    
-    
+        return response.choices[0].message["content"]
+
+
     def eval_batch(self, output_dir: Path, prompts: list, image_urls: list) -> list:
         """
         Send a batch request to the model with multiple prompts and image URLs.
@@ -80,6 +81,15 @@ class OpenAIModel(BaseModel):
         
         with open(output_dir / "input.jsonl", "w") as f:
             for i, (prompt, image_url) in enumerate(zip(prompts, image_urls)):
+                if image_url.startswith("data:"):
+                    img_msg = {"type": "input_image", "image_url": image_url, "detail": "high"}
+                else:
+                    img_msg = {
+                        "type": "image_url",
+                        "image_url": image_url,
+                        "detail": "high"
+                }
+
                 message = {
                     "custom_id": str(i),
                     "method": "POST",
@@ -89,8 +99,8 @@ class OpenAIModel(BaseModel):
                         "messages": self.system + [{
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": prompt},
-                                {"type": "image_url", "image_url": {"url": image_url}},
+                                {"type": "input_text", "text": prompt},
+                                img_msg,
                             ],
                         }],
                         **self.params
@@ -104,7 +114,7 @@ class OpenAIModel(BaseModel):
         )
         
         batch_input_file_id = batch_input_file.id
-        self.client.batches.create(
+        batch = self.client.batches.create(
             input_file_id=batch_input_file_id,
             endpoint="/v1/chat/completions",
             completion_window="24h",
@@ -115,7 +125,7 @@ class OpenAIModel(BaseModel):
         
         print(
             "Batch input file created and batch started. Batch ID:", 
-            batch_input_file_id, "Retrieve it in 24 hours."
+            batch.id, "File ID:", batch_input_file_id, "Retrieve it in 24 hours."
         )
         
         return []
@@ -137,8 +147,12 @@ class OpenAIModel(BaseModel):
             return image_url
         
         elif file_name:
-            with open(dataset_path / file_name, "rb") as f:
-                return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode("utf-8")}"
+            # look in the `images/` sub‑dir
+            file_path = dataset_path / "images" / file_name
+            if not file_path.exists():
+                raise FileNotFoundError(f"Could not find image at {file_path}")
+            with open(file_path, "rb") as f:
+                return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode('utf-8')}"
             
         else:
             raise ValueError("Either image_url or image_path must be provided.")

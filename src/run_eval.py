@@ -13,7 +13,7 @@ def root() -> Path:
     """
     Get the root path of the project.
     """
-    return Path(__file__).resolve().parent
+    return Path(__file__).resolve().parent.parent
 
 
 def build_config(args: argparse.Namespace) -> dict:
@@ -55,10 +55,16 @@ def main(args):
     """
     load_dotenv()
     config = build_config(args)
-    model = load_model(config["engine"], **config)
+    engine = config.pop("engine")
+    model = load_model(engine, **config)
     timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
     
-    output_dir = root() / args.output_dir / timestamp
+    out_path = Path(args.output_dir)
+    # if user passed an absolute path, use it directly; otherwise prepend project root
+    if not out_path.is_absolute():
+        out_path = root() / out_path
+    output_dir = out_path / timestamp
+    
     os.makedirs(output_dir, exist_ok=True)
     
     datasets = args.datasets.split(",")
@@ -70,7 +76,7 @@ def main(args):
             raise FileNotFoundError(f"Dataset {dataset} not found at {dataset_path}")
         
         print(f"Evaluating on {dataset}...")        
-        model.eval(output_dir, dataset_path, args.batch_size)
+        model.eval(dataset_path, output_dir, args.batch_size)
         
         
 def parse_args():
