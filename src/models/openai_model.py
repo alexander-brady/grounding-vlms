@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from .base import Evaluator
 from openai import OpenAI
+from openai.lib._pydantic import to_strict_json_schema
 from pathlib import Path
 
 class ObjectCount(BaseModel):
@@ -70,7 +71,7 @@ class OpenAIModel(Evaluator):
         return {
             "model": self.model,
             "messages": messages,
-            "response_format": ObjectCount,
+            "response_format": to_strict_json_schema(ObjectCount),
             **self.params
         }
         
