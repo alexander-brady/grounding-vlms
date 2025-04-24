@@ -1,6 +1,8 @@
 # Evaluation Datasets
 
-This folder contains data for four counting‐focused vision benchmarks. 
+This folder contains data for four counting‐focused vision benchmarks.
+
+> Datasets were formatted with `datasets/clean.ipynb` (work in progress)
 
 ---
 
