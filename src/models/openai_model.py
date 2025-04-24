@@ -68,10 +68,19 @@ class OpenAIModel(Evaluator):
             ],
         }]
         
+        response_format = {
+           'type': 'json_schema',
+           'json_schema': 
+              {
+                "name":"whocares", 
+                "schema": to_strict_json_schema(ObjectCount)
+              }
+        }
+        
         return {
             "model": self.model,
             "messages": messages,
-            "response_format": to_strict_json_schema(ObjectCount),
+            "response_format": response_format,
             **self.params
         }
         
