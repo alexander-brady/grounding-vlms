@@ -154,7 +154,9 @@ class OpenAIModel(Evaluator):
             "Batch input file created and batch started.",
             "\nBatch ID:", batch.id, 
             "\nFile ID:", batch_input_file_id, 
-            "\nRetrieve in 24 hours. (see src/retrieval.ipynb)"
+            "\nRetrieve in 24 hours. (see src/retrieval.ipynb)",
+            "\n----",
+            flush=True
         )
         
         return []

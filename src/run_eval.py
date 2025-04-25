@@ -1,5 +1,4 @@
-import yaml
-import json
+import yaml, json, time
 import argparse
 
 from pathlib import Path
@@ -58,10 +57,15 @@ def main(args):
     model = load_model(engine, **config)
     
     output_dir = Path(args.output_dir)
+    
     # if user passed an absolute path, use it directly; otherwise prepend project root
     if not output_dir.is_absolute():
         output_dir = root() / output_dir
-        
+    
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    output_dir = output_dir / f"{timestamp}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     datasets = args.datasets.split(",")
     for dataset in datasets:
         dataset = dataset.strip()
@@ -70,9 +74,11 @@ def main(args):
         if not(dataset_path / "dataset.csv").exists():
             raise FileNotFoundError(f"Dataset {dataset} not found at {dataset_path}")
         
-        print(f"Evaluating on {dataset}...")        
-        model.eval(dataset_path, output_dir, args.batch_size)
-        
+        print(f"Evaluating on {dataset}...", flush=True)
+        model.eval(dataset_path, output_dir / f"{dataset}.csv", args.batch_size)
+    
+    if not any(output_dir.iterdir()):
+        output_dir.rmdir()
         
 def parse_args():
     '''Parse command line arguments.'''

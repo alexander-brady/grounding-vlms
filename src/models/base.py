@@ -1,4 +1,4 @@
-import os, time
+import os
 from io import BytesIO
 from pathlib import Path
 
@@ -14,18 +14,18 @@ class Evaluator:
     def __str__(self):
         return self.__class__.__name__.lower()
     
-    def eval(self, dataset_dir: Path, output_dir: Path, batch_size: int = 1):
+    def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         """
         Evaluate the model with a DataFrame of prompts and images.
         
         Args:
             dataset_dir (pathlib.Path): The directory containing the dataset.
-            output_dir (pathlib.Path): The directory to save the results.
+            result_file (pathlib.Path): Where to save the results.
             batch_size (int): The number of samples to process in each batch.
         """
         
         df = pd.read_csv(dataset_dir / "dataset.csv")
-        
+                
         assert "prompt" in df.columns, "DataFrame must contain a 'prompt' column."
         assert "image_url" in df.columns or "file_name" in df.columns, "DataFrame must contain an 'image_url' or 'file_name' column."
         
@@ -39,12 +39,7 @@ class Evaluator:
         ]
         
         batch_size = batch_size if batch_size > 0 else len(items)
-        os.makedirs(output_dir, exist_ok=True)
         
-        timestamp = time.strftime("%Y-%m-%d_%H-%M-%S")
-                
-        # write results to “<output_dir>/<timestamp>.csv”
-        result_file = output_dir / f"{timestamp}.csv"
         with open(result_file, "w") as f:
             f.write("idx,result\n")
             
@@ -67,7 +62,10 @@ class Evaluator:
                     for idx, result in zip(idxs, results):
                         if result:
                             f.write(f"{idx},{result}\n")
-                        
+        
+        if str(self) == "openai" and batch_size > 1:
+            # OpenAI API does not support instantaneous batch processing
+            os.remove(result_file)
             
     def eval_single(self, prompt: str, image: Image) -> str:
         """Evaluate a single prompt and image. """
