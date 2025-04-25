@@ -104,11 +104,11 @@ class OpenAIModel(Evaluator):
         return response.choices[0].message["content"]
 
 
-    def eval_batch(self, output_dir: Path, prompts: list, image_urls: list) -> list:
+    def eval_batch(self, batch_index: int, prompts: list, image_urls: list) -> list:
         """
         Send a batch request to the model with multiple prompts and image URLs.
         Args:
-            output_dir (pathlib.Path): The path to the directory for input.jsonl.
+            batch_index (int): The start index for the batch.
             prompts (list): The prompts to ask the model.
             image_urls (list): The urls of the images to ask the model about.
             
@@ -117,14 +117,13 @@ class OpenAIModel(Evaluator):
         """
         assert len(prompts) == len(image_urls), "Number of prompts and images must match."
 
-        output_dir.mkdir(parents=True, exist_ok=True)
         
-        batch_file = output_dir / "input.jsonl"
+        batch_file = "tmp/input.jsonl"
         if batch_file.exists():
             batch_file.unlink()
             
         with open(batch_file, "w") as f:
-            for i, (prompt, image_url) in enumerate(zip(prompts, image_urls)):
+            for i, (prompt, image_url) in enumerate(zip(prompts, image_urls), start=batch_index):
                 message = {
                     "custom_id": str(i),
                     "method": "POST",

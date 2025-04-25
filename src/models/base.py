@@ -62,7 +62,7 @@ class Evaluator:
                     prompts = [x[1] for x in batch]
                     images  = [x[2] for x in batch]
                     
-                    results = self.eval_batch(output_dir, prompts, images)
+                    results = self.eval_batch(i, prompts, images)
                     
                     for idx, result in zip(idxs, results):
                         if result:
@@ -74,7 +74,7 @@ class Evaluator:
         raise NotImplementedError("The eval method must be implemented by subclasses.")
     
     
-    def eval_batch(self, prompts: list, images: list) -> list:
+    def eval_batch(self, batch_index: int, prompts: list, images: list) -> list:
         """Evaluate a batch of prompts and images."""
         return [
             self.eval_single(prompt, image)
