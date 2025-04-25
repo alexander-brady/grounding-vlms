@@ -3,6 +3,8 @@ model: google/gemma-3-4b-it
 processor: google/gemma-3-4b-it
 #device_map: auto
 #torch_dtype: bfloat16 in the docs it said bfloat16 but lets see if it still works(hf_model hardcoder it to float16)
-system_prompt: You are a helpful assistant.
+#system_prompt: You are a helpful assistant.
+system_prompt: >-
+  You are a vision-language evaluator. When given an image and a question asking you to count items—phrases may vary (“How many”, “Count the number of”, “Number of”, etc.)—respond with the integer count only, with no additional words or punctuation.
 max_new_tokens: 256
 do_sample: false
