@@ -1,0 +1,6 @@
+engine: huggingface
+model: google/gemma-3-27b-it           # HF repo ID for instruction‐tuned 27 B model :contentReference[oaicite:3]{index=3}
+processor: google/gemma-3-27b-it
+system_prompt: "You are a helpful assistant."
+max_new_tokens: 256
+do_sample: false

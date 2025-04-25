@@ -1,0 +1,7 @@
+# models/gemma-3-12b-it.yaml
+engine: huggingface
+model: google/gemma-3-12b-it           # HF repo ID for instruction‐tuned 12 B model :contentReference[oaicite:2]{index=2}
+processor: google/gemma-3-12b-it
+system_prompt: "You are a helpful assistant."
+max_new_tokens: 256
+do_sample: false
