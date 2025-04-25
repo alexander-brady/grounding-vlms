@@ -8,4 +8,8 @@ venv/
 # Python cache files
 __pycache__/
 
+# Log files
+logs/
+
+# Dataset 
 images/

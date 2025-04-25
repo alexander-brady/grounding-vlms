@@ -2,16 +2,13 @@
 #SBATCH --job-name=benchmark
 #SBATCH --output=logs/benchmark_%j.out
 #SBATCH --error=logs/benchmark_%j.err
-#SBATCH --time=01:00:00
-#SBATCH --partition=cpu
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
+#SBATCH --mem-per-cpu=24G
+#SBATCH --time=01:00:00
 #SBATCH --account=pmlr
 
 SCRATCH_DIR=/work/scratch/$USER
-
-mkdir -p "$SCRATCH_DIR"
+MODEL="openai/gpt-4-1"
 
 # Check if venv exists, create if not
 if [ ! -d "$SCRATCH_DIR/.venv" ]; then
@@ -21,8 +18,19 @@ fi
 # Activate the virtual environment
 source "$SCRATCH_DIR/.venv/bin/activate"
 
-# Upgrade pip and install requirements
-pip install --upgrade pip
-pip install -r requirements.txt
+echo "Starting Benchmarking job for $MODEL"
+echo "Job started at $(date)"
 
-srun -A pmlr -t 5 python src/run_eval.py --config openai/gpt-4-1 --batch_size -1 --datasets "Sample" 
+# Upgrade pip and install requirements
+pip install --upgrade pip --quiet
+pip install -r requirements.txt --quiet
+
+python src/run_eval.py \
+  --config $MODEL \
+  --batch_size -1 \
+# --datasets "Sample"
+#srun -A pmlr -t 5 python src/run_eval.py --config huggingface/gemma-3-4b-it.yaml --batch_size -1 --datasets "Sample"
+
+echo "Job completed at $(date)"
+
+deactivate 

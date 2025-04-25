@@ -118,10 +118,9 @@ class OpenAIModel(Evaluator):
         assert len(prompts) == len(image_urls), "Number of prompts and images must match."
 
         
-        batch_file = "tmp/input.jsonl"
-        if batch_file.exists():
-            batch_file.unlink()
-            
+        batch_file = Path("tmp/input.jsonl")
+        batch_file.parent.mkdir(parents=True, exist_ok=True)
+
         with open(batch_file, "w") as f:
             for i, (prompt, image_url) in enumerate(zip(prompts, image_urls), start=batch_index):
                 message = {
@@ -138,6 +137,8 @@ class OpenAIModel(Evaluator):
         )
         
         batch_file.unlink()
+        if not batch_file.parent.iterdir():
+            batch_file.parent.rmdir()
         
         batch_input_file_id = batch_input_file.id
         batch = self.client.batches.create(
