@@ -14,6 +14,15 @@ class Evaluator:
     def __str__(self):
         return self.__class__.__name__.lower()
     
+    def max_batch_size(self, df: pd.DataFrame) -> int:
+        """
+        Returns the maximum batch size for the model.
+        
+        Returns:
+            int: The maximum batch size.
+        """
+        return len(df)
+    
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         """
         Evaluate the model with a DataFrame of prompts and images.
@@ -38,7 +47,7 @@ class Evaluator:
             for idx, row in df.iterrows()
         ]
         
-        batch_size = batch_size if batch_size > 0 else len(items)
+        batch_size = batch_size if batch_size > 0 else self.max_batch_size(items)
         
         with open(result_file, "w") as f:
             f.write("idx,result\n")

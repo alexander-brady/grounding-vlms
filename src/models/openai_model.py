@@ -15,6 +15,13 @@ class OpenAIModel(Evaluator):
     def __str__(self):
         return "openai"
     
+    def max_batch_size(self, items: list) -> int:
+        # Limit is 50000 or 209715200b
+        total_bytes = 0
+        for _, row in items:
+            byte_count = len(row["prompt"].encode("utf-8"))
+        return min(45000 
+    
         
     def __init__(self, model: str, client=OpenAI, system_prompt: str=None, **params):
         """
