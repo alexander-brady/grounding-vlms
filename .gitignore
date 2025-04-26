@@ -13,4 +13,8 @@ logs/
 
 # Dataset 
 images/
+results/
+
+# Temporary files
 tmp/
+experiments/

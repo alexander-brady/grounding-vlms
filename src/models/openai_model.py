@@ -72,19 +72,10 @@ class OpenAIModel(Evaluator):
             ],
         }]
         
-        response_format = {
-           'type': 'json_schema',
-           'json_schema': 
-              {
-                "name":"ObjectCount", 
-                "schema": to_strict_json_schema(ObjectCount)
-              }
-        }
-        
         return {
             "model": self.model,
             "messages": messages,
-            "response_format": response_format,
+            "response_format": ObjectCount,
             **self.params
         }
         
@@ -99,13 +90,13 @@ class OpenAIModel(Evaluator):
             str: The model's response.
         """
         try:
-            response = self.client.responses.parse(
+            response = self.client.beta.chat.completions.parse(
                 **self.api_body(prompt, image_url)
             )
         except Exception as e:
             raise Exception(f"Error: {e}")
         
-        return response.choices[0].message["content"]
+        return response.choices[0].message.parsed.count
 
 
     def eval_batch(self, batch_index, prompts, images):
@@ -135,6 +126,15 @@ class OpenAIModel(Evaluator):
         
         # batch_file = Path("tmp/input.jsonl")
         # batch_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # response_format = {
+        #    'type': 'json_schema',
+        #    'json_schema': 
+        #       {
+        #         "name":"ObjectCount", 
+        #         "schema": to_strict_json_schema(ObjectCount)
+        #       }
+        # }
 
         # with open(batch_file, "w") as f:
         #     for i, (prompt, image_url) in enumerate(zip(prompts, image_urls), start=batch_index):
