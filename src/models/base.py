@@ -71,10 +71,6 @@ class Evaluator:
                     for idx, result in zip(idxs, results):
                         if result:
                             f.write(f"{idx},{result}\n")
-        
-        if str(self) == "openai" and batch_size > 1:
-            # OpenAI API does not support instantaneous batch processing
-            os.remove(result_file)
             
     def eval_single(self, prompt: str, image: Image) -> str:
         """Evaluate a single prompt and image. """

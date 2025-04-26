@@ -3,12 +3,16 @@
 #SBATCH --output=logs/benchmark_%j.out
 #SBATCH --error=logs/benchmark_%j.err
 #SBATCH --ntasks=1
+#SBATCH --tmp=100G
 #SBATCH --mem-per-cpu=128G
-#SBATCH --time=01:00:00
+#SBATCH --time=24:00:00
 #SBATCH --account=pmlr
 
-SCRATCH_DIR=/work/scratch/$USER
+SCRATCH_DIR=/scratch/$USER
 MODEL="openai/gpt-4-1"
+
+# Load the necessary modules
+module load cuda/11.8.0
 
 # Check if venv exists, create if not
 if [ ! -d "$SCRATCH_DIR/pmlr/.venv" ]; then
@@ -27,8 +31,8 @@ pip install -r requirements.txt --quiet
 
 python src/run_eval.py \
   --config $MODEL \
-  --batch_size -1 \
-  --datasets "TallyQA"
+  # --batch_size -1 \
+  # --datasets "TallyQA"
 #srun -A pmlr -t 5 python src/run_eval.py --config huggingface/gemma-3-4b-it.yaml --batch_size -1 --datasets "Sample"
 
 echo "Job completed at $(date)"
