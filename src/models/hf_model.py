@@ -1,14 +1,20 @@
 import torch
 from PIL import Image
-from transformers import AutoModelForVision2Seq, AutoProcessor
+from transformers import AutoModelForVision2Seq, AutoProcessor, Gemma3ForConditionalGeneration
 
 from .base import Evaluator
+
+def _get_engine(model: str):
+    if 'gemma-3' in model.lower():
+        return Gemma3ForConditionalGeneration
+    else:
+        return AutoModelForVision2Seq
 
 class HuggingFaceModel(Evaluator):
     '''Evaluation for models from huggingface.co.'''
     
     def __str__(self):
-        return "huggingface"    
+        return "huggingface"
     
     
     def __init__(self, model: str, **params):
@@ -18,8 +24,13 @@ class HuggingFaceModel(Evaluator):
             **params: Additional arguments for the model (processor, system_prompt, max_tokens, etc.)
         """
         super().__init__(device = "cuda" if torch.cuda.is_available() else "cpu")
-        self.model = AutoModelForVision2Seq.from_pretrained(
-            model, torch_dtype=torch.float16 if self.device == "cuda" else torch.float32
+        
+        torch_dtype = params.get("torch_dtype", torch.float16 if self.device == "cuda" else torch.float32)
+        device_map = params.get("device_map", self.device)
+        self.model = _get_engine(model).from_pretrained(
+            model, 
+            torch_dtype=torch_dtype,
+            device_map=device_map
         ).to(self.device)
 
         self.processor = AutoProcessor.from_pretrained(params.get("processor", model))

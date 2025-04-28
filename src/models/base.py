@@ -1,4 +1,3 @@
-import os
 from io import BytesIO
 from pathlib import Path
 
@@ -37,15 +36,7 @@ class Evaluator:
                 
         assert "prompt" in df.columns, "DataFrame must contain a 'prompt' column."
         assert "image_url" in df.columns or "file_name" in df.columns, "DataFrame must contain an 'image_url' or 'file_name' column."
-        
-        items = [
-            (idx, row["prompt"], self.process_image(
-                dataset_dir, 
-                image_url=row.get("image_url"), 
-                file_name=row.get("file_name")
-            ))
-            for idx, row in df.iterrows()
-        ]
+
         
         batch_size = batch_size if batch_size > 0 else self.max_batch_size(items)
         
@@ -53,18 +44,26 @@ class Evaluator:
             f.write("idx,result\n")
             
             if batch_size == 1:
-                for idx, prompt, image in items:
-                    result = self.eval_single(prompt, image)
+                for idx, row in df.iterrows():
+                    result = self.eval_single(row["prompt"], self.process_image(
+                        dataset_dir, 
+                        image_url=row.get("image_url"), 
+                        file_name=row.get("file_name")
+                    ))
                     if result:
                         f.write(f"{idx},{result}\n")
                     
             else:
-                for i in range(0, len(items), batch_size):
-                    batch = items[i:i + batch_size]
+                for i in range(0, len(df), batch_size):
+                    batch = df.iloc[i:i + batch_size]
                     
-                    idxs   = [x[0] for x in batch]
-                    prompts = [x[1] for x in batch]
-                    images  = [x[2] for x in batch]
+                    idxs   = batch.index.tolist()
+                    prompts = batch["prompt"].tolist()
+                    images  = [ self.process_image(
+                        dataset_dir, 
+                        image_url=row.get("image_url"), 
+                        file_name=row.get("file_name")
+                    ) for row in batch.itertuples() ]
                     
                     results = self.eval_batch(i, prompts, images)
                     

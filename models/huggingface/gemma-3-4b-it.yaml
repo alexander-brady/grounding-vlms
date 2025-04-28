@@ -8,3 +8,4 @@ system_prompt: >-
   You are a vision-language evaluator. When given an image and a question asking you to count items—phrases may vary (“How many”, “Count the number of”, “Number of”, etc.)—respond with the integer count only, with no additional words or punctuation.
 max_new_tokens: 256
 do_sample: false
+batch_size: 1

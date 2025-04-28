@@ -8,8 +8,13 @@
 #SBATCH --time=24:00:00
 #SBATCH --account=pmlr
 
+
 SCRATCH_DIR=/scratch/$USER
-MODEL="openai/gpt-4-1"
+#MODEL="openai/gpt-4-1"
+MODEL="huggingface/gemma-3-4b-it"
+
+# Clear the scratch directory
+rm -rf $SCRATCH_DIR/*
 
 # Load the necessary modules
 module load cuda/11.8.0
@@ -31,8 +36,8 @@ pip install -r requirements.txt --quiet
 
 python src/run_eval.py \
   --config $MODEL \
-  # --batch_size -1 \
-  # --datasets "TallyQA"
+  --batch_size -1 \
+  --datasets "Sample"
 #srun -A pmlr -t 5 python src/run_eval.py --config huggingface/gemma-3-4b-it.yaml --batch_size -1 --datasets "Sample"
 
 echo "Job completed at $(date)"
