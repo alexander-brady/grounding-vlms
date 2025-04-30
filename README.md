@@ -85,8 +85,10 @@ For OpenAI-style API models. Requires `OPENAI_API_KEY` set in `.env`. Uses OpenA
 Supported params:
 `temperature`, `frequency_penalty`, `max_completion_tokens`, `reasoning_effort`, `seed`, `top_p`
 
-Batch execution can take up to 24 hours and must be retrieved manually. File retrieval can be done with `src/retrieval.ipynb`.
+<!-- Batch execution can take up to 24 hours and must be retrieved manually. File retrieval can be done with `src/retrieval.ipynb`. -->
 
 ### huggingface
 
 For `AutoModelForVision2Seq` models. Set the processor with the `--processor` argument, else will be same as `model`.
+
+Some models require `HUGGING_FACE_HUB_TOKEN` environment variable.

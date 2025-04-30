@@ -22,7 +22,7 @@ def build_config(args: argparse.Namespace) -> dict:
         dict: The configuration for the model.
     """    
     if args.config:
-        path = root() / "models" / (args.config if args.config.endswith(".yaml") else f"{args.config}.yaml")        
+        path = root() / "models" / f"{args.config}.yaml"       
         with open(path, "r") as f:
             config = yaml.safe_load(f)
             
@@ -104,6 +104,8 @@ def parse_args():
     parser.add_argument("--output_dir", help="Directory to save the evaluation results")
     
     args = parser.parse_args()
+    if args.config:
+        args.config = args.config.replace(".yaml", "")
     
     if not args.config:
         missing = [ arg for arg in ["engine", "model"] if not getattr(args, arg)]
@@ -112,7 +114,7 @@ def parse_args():
             
     if not args.output_dir:
         if args.config:
-            args.output_dir = f"eval/results/{args.config.replace(".yaml", "")}"
+            args.output_dir = f"eval/results/{args.config}"
         else:
             args.output_dir = f"eval/results/{args.engine}/{args.model}"
             

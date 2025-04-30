@@ -30,21 +30,21 @@ class HuggingFaceModel(Evaluator):
         self.model = _get_engine(model).from_pretrained(
             model, 
             torch_dtype=torch_dtype,
-            device_map=device_map
+            device_map=device_map,
         ).to(self.device)
 
-        self.processor = AutoProcessor.from_pretrained(params.get("processor", model))
+        self.processor = AutoProcessor.from_pretrained(params.get("processor", model), use_fast=True)
         
         self.params = params
         self.system = [{
             "role": "system",
-            "content": params.system_prompt,
+            "content": params["system_prompt"],
         }] if 'system_prompt' in params else []
         
         self.model.eval()
 
 
-    def eval(self, prompt: str, image: Image) -> str:
+    def eval_single(self, prompt: str, image: Image) -> str:
         '''
         Evaluate the model with a prompt and an image.
         Args:

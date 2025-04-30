@@ -38,7 +38,8 @@ class Evaluator:
         assert "image_url" in df.columns or "file_name" in df.columns, "DataFrame must contain an 'image_url' or 'file_name' column."
 
         
-        batch_size = batch_size if batch_size > 0 else self.max_batch_size(items)
+        batch_size = batch_size if batch_size > 0 else self.max_batch_size(df)
+        image_dir = dataset_dir / "images"
         
         with open(result_file, "w") as f:
             f.write("idx,result\n")
@@ -46,7 +47,7 @@ class Evaluator:
             if batch_size == 1:
                 for idx, row in df.iterrows():
                     result = self.eval_single(row["prompt"], self.process_image(
-                        dataset_dir, 
+                        image_dir, 
                         image_url=row.get("image_url"), 
                         file_name=row.get("file_name")
                     ))
@@ -57,13 +58,13 @@ class Evaluator:
                 for i in range(0, len(df), batch_size):
                     batch = df.iloc[i:i + batch_size]
                     
-                    idxs   = batch.index.tolist()
+                    idxs = batch.index.tolist()
                     prompts = batch["prompt"].tolist()
                     images  = [ self.process_image(
-                        dataset_dir, 
+                        image_dir, 
                         image_url=row.get("image_url"), 
                         file_name=row.get("file_name")
-                    ) for row in batch.itertuples() ]
+                    ) for _, row in batch.iterrows() ]
                     
                     results = self.eval_batch(i, prompts, images)
                     
@@ -84,12 +85,12 @@ class Evaluator:
         ]
             
     
-    def process_image(self, dataset_path: Path, image_url: str=None, file_name: str=None) -> Image:
+    def process_image(self, image_path: Path, image_url: str=None, file_name: str=None) -> Image:
         """
         Process the image from a path/url.
         
         Args:
-            dataset_path (pathlib.Path): The path to the dataset directory.
+            image_path (pathlib.Path): The path to the images directory.
             image_url (str): The URL of the image to process.
             file_name (str): The path to the image file to process.
             
@@ -104,7 +105,7 @@ class Evaluator:
                 raise ValueError(f"Failed to fetch image from URL: {image_url}")
         
         elif file_name:
-            with open(dataset_path / file_name, "rb") as f:
+            with open(image_path / file_name, "rb") as f:
                 return Image.open(f).convert("RGB")
             
         else:

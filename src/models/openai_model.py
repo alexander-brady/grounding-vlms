@@ -177,12 +177,12 @@ class OpenAIModel(Evaluator):
         # return []
     
     
-    def process_image(self, dataset_path: Path, image_url: str=None, file_name: str=None) -> str:
+    def process_image(self, image_path: Path, image_url: str=None, file_name: str=None) -> str:
         """
         Process the image and return its URL.
         
         Args:
-            dataset_path (pathlib.Path): The path to the dataset directory.
+            image_path (pathlib.Path): The path to the images directory.
             image_url (str): The URL of the image to process.
             file_name (str): The path to the image file to process.
             
@@ -193,8 +193,7 @@ class OpenAIModel(Evaluator):
             return image_url
         
         elif file_name:
-            # look in the `images/` sub‑dir
-            file_path = dataset_path / "images" / file_name
+            file_path = image_path / file_name
             if not file_path.exists():
                 raise FileNotFoundError(f"Could not find image at {file_path}")
             with open(file_path, "rb") as f:
