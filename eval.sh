@@ -5,6 +5,9 @@
 #SBATCH --ntasks=1
 #SBATCH --tmp=64G
 #SBATCH --mem-per-cpu=64G
+#SBATCH --nodes=1
+#SBATCH --gpus-per-node=1
+#SBATCH --gres=gpumem:48g
 #SBATCH --time=24:00:00
 #SBATCH --account=es_sachan
 
@@ -32,8 +35,9 @@ pip install -r requirements.txt --quiet
 
 python src/run_eval.py \
   --config $MODEL \
-  --batch_size -1 \
   --datasets "FSC-147, GeckoNum, PixMo_Count"
+  # --datasets "Sample" \
+  # --batch_size -1 \
 
 echo "Job completed at $(date)"
 

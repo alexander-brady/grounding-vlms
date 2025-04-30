@@ -35,9 +35,6 @@ def build_config(args: argparse.Namespace) -> dict:
     if args.system_prompt:
         config["system_prompt"] = args.system_prompt
         
-    if args.processor:
-        config["processor"] = args.processor
-        
     if args.params:
         config.update(args.params)
             
@@ -90,7 +87,6 @@ def parse_args():
     parser.add_argument("--model", help="Name of the model to evaluate (only if config is not provided)")
     
     parser.add_argument("--system_prompt", help="System prompt to initialize the model")
-    parser.add_argument("--processor", help="Processor/tokenizer to use for the model, defaults to model name")
     
     parser.add_argument("--params", type=json.loads, help="Extra params as JSON string")
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size for evaluation. -1 for all at once')

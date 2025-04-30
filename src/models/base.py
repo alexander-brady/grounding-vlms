@@ -4,11 +4,74 @@ from pathlib import Path
 import pandas as pd
 import requests
 from PIL import Image
+from torch.utils.data import Dataset, DataLoader
+
+
+class BaseDataset(Dataset):
+    '''Turns prompts and images into a usable dataset. Defaults to HuggingFace Standard.'''
+    def __init__(self, 
+                 df: pd.DataFrame, 
+                 image_dir: Path = None, 
+                 prompt_col: str = "prompt", 
+                 image_url_col: str = "image_url",
+                 image_path_col: str = "file_name"
+            ):
+        """
+        Base class for all datasets.
+        
+        Args:
+            df (pd.DataFrame): The DataFrame containing the dataset.
+            image_dir (pathlib.Path): The directory containing the images.
+        """
+        assert prompt_col in df.columns, f'DataFrame must contain "{prompt_col}" column.'
+        assert image_url_col in df.columns or image_path_col in df.columns, f'DataFrame must contain either "{image_url_col}" or "{image_path_col}" column.'
+        
+        self.prompts = df[prompt_col].tolist()
+        
+        self.using_image_urls = image_url_col in df.columns
+        self.images = df[image_url_col].tolist() if self.using_image_urls else df[image_path_col].tolist()
+        
+        self.image_dir = image_dir
+        
+    def __len__(self):
+        return len(self.prompts)
+    
+    def __getitem__(self, idx):
+        return [{
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "image": self.process_image(idx),
+                },
+                {"type": "text", "text": self.prompts[idx]}
+            ],
+        }]
+            
+    def process_image(self, idx):
+        '''Turn image into model readable format.'''
+        if self.using_image_urls:
+            image_url = self.images[idx]
+            response = requests.get(image_url)
+            if response.status_code == 200:
+                return Image.open(BytesIO(response.content)).convert("RGB")
+            else:
+                raise ValueError(f"Failed to fetch image from URL: {image_url}")
+        else:
+            file_name = self.images[idx]
+            with open(self.image_dir / file_name, "rb") as f:
+                return Image.open(f).convert("RGB")
 
 
 class Evaluator:
-    def __init__(self, device: str = "cpu"):
-        self.device = device
+    def __init__(self, system_prompt: str = None):
+        """
+        Base class for all evaluators.
+        """        
+        self.system = [{
+            "role": "system",
+            "content": system_prompt
+        }] if system_prompt else []
         
     def __str__(self):
         return self.__class__.__name__.lower()
@@ -22,91 +85,35 @@ class Evaluator:
         """
         return len(df)
     
-    def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
+    def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1, Container: BaseDataset = BaseDataset):
         """
-        Evaluate the model with a DataFrame of prompts and images.
+        Evaluate the model with a DataFrame of prompts and images, saving the results to a CSV file.
         
         Args:
             dataset_dir (pathlib.Path): The directory containing the dataset.
             result_file (pathlib.Path): Where to save the results.
             batch_size (int): The number of samples to process in each batch.
-        """
-        
+            DatasetClass (BaseDataset): The class to use for the dataset (inheriting from BaseDataset).
+        """        
         df = pd.read_csv(dataset_dir / "dataset.csv")
-                
-        assert "prompt" in df.columns, "DataFrame must contain a 'prompt' column."
-        assert "image_url" in df.columns or "file_name" in df.columns, "DataFrame must contain an 'image_url' or 'file_name' column."
-
+        dataset = Container(df, image_dir=dataset_dir / "images")
         
         batch_size = batch_size if batch_size > 0 else self.max_batch_size(df)
-        image_dir = dataset_dir / "images"
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         
         with open(result_file, "w") as f:
             f.write("idx,result\n")
-            
-            if batch_size == 1:
-                for idx, row in df.iterrows():
-                    result = self.eval_single(row["prompt"], self.process_image(
-                        image_dir, 
-                        image_url=row.get("image_url"), 
-                        file_name=row.get("file_name")
-                    ))
-                    if result:
-                        f.write(f"{idx},{result}\n")
+            for idx, prompt in enumerate(dataloader):
+                for line_idx, out in enumerate(self.eval_batch(idx, prompt), start=idx):
+                    f.write(f"{line_idx},{out}\n")
                     
-            else:
-                for i in range(0, len(df), batch_size):
-                    batch = df.iloc[i:i + batch_size]
-                    
-                    idxs = batch.index.tolist()
-                    prompts = batch["prompt"].tolist()
-                    images  = [ self.process_image(
-                        image_dir, 
-                        image_url=row.get("image_url"), 
-                        file_name=row.get("file_name")
-                    ) for _, row in batch.iterrows() ]
-                    
-                    results = self.eval_batch(i, prompts, images)
-                    
-                    for idx, result in zip(idxs, results):
-                        if result:
-                            f.write(f"{idx},{result}\n")
-            
-    def eval_single(self, prompt: str, image: Image) -> str:
-        """Evaluate a single prompt and image. """
+    def eval_single(self, prompt: list) -> str:
+        """Evaluate a prompt."""
         raise NotImplementedError("The eval method must be implemented by subclasses.")
     
-    
-    def eval_batch(self, batch_index: int, prompts: list, images: list) -> list:
+    def eval_batch(self, batch_index: int, prompts: list) -> list:
         """Evaluate a batch of prompts and images."""
         return [
-            self.eval_single(prompt, image)
-            for prompt, image in zip(prompts, images)
+            self.eval_single(prompt)
+            for prompt in prompts
         ]
-            
-    
-    def process_image(self, image_path: Path, image_url: str=None, file_name: str=None) -> Image:
-        """
-        Process the image from a path/url.
-        
-        Args:
-            image_path (pathlib.Path): The path to the images directory.
-            image_url (str): The URL of the image to process.
-            file_name (str): The path to the image file to process.
-            
-        Returns:
-            Image: The processed image.
-        """
-        if image_url:
-            response = requests.get(image_url)
-            if response.status_code == 200:
-                return Image.open(BytesIO(response.content)).convert("RGB")
-            else:
-                raise ValueError(f"Failed to fetch image from URL: {image_url}")
-        
-        elif file_name:
-            with open(image_path / file_name, "rb") as f:
-                return Image.open(f).convert("RGB")
-            
-        else:
-            raise ValueError("Either image_url or image_path must be provided.")

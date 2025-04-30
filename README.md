@@ -68,7 +68,6 @@ Use one of:
 
 **Optional**  
 - `--system_prompt`: Custom system prompt  
-- `--processor`: Tokenizer (defaults to model for backends that need it).
 - `--params`: Override parameters (JSON format), e.g. `'{ "temperature": 0.7, "top_k": 5 }'`  
 - `--batch_size`: Batch size for batch execution (default: no batch). Set to -1 to set the whole dataset as a batch.
 - `--output_dir`: Output directory (default: `eval/datasets/type/model`)  
@@ -89,6 +88,6 @@ Supported params:
 
 ### huggingface
 
-For `AutoModelForVision2Seq` models. Set the processor with the `--processor` argument, else will be same as `model`.
+Uses `pipeline` for `image-text-to-text` models. 
 
 Some models require `HUGGING_FACE_HUB_TOKEN` environment variable.

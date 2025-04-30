@@ -1,11 +1,11 @@
 from .openai_model import OpenAIModel
 from .hf_model import HuggingFaceModel
 
-def load_model(model_name: str, **kwargs):
+def load_model(engine_name: str, **kwargs):
     """
     Load the specified model.
     Args:
-        model_name (str): The name of the model to load.
+        engine_name (str): The name of the model to load.
         **kwargs: Additional arguments to pass to the model constructor.
     Returns:
         BaseModel: An instance of the specified model.
@@ -18,7 +18,7 @@ def load_model(model_name: str, **kwargs):
         # Add other models here as needed
     }
     
-    if model_name not in model_map:
-        raise ValueError(f"Model '{model_name}' is not supported. Available models: {list(model_map.keys())}.")
+    if engine_name not in model_map:
+        raise ValueError(f"Model '{engine_name}' is not supported. Available models: {list(model_map.keys())}.")
     
-    return model_map[model_name](**kwargs)
+    return model_map[engine_name](**kwargs)
