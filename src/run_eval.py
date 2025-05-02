@@ -48,8 +48,10 @@ def main(args):
         args (argparse.Namespace): The command line arguments.
     """
     load_dotenv()
+    
     config = build_config(args)
     engine = config.pop("engine")
+    batch_size = config.pop("batch_size", 1)
     
     model = load_model(engine, **config)
     
@@ -72,7 +74,7 @@ def main(args):
             raise FileNotFoundError(f"Dataset {dataset} not found at {dataset_path}")
         
         print(f"Evaluating on {dataset}...", flush=True)
-        model.eval(dataset_path, output_dir / f"{dataset}.csv", args.batch_size)
+        model.eval(dataset_path, output_dir / f"{dataset}.csv", batch_size)
     
     if not any(output_dir.iterdir()):
         output_dir.rmdir()

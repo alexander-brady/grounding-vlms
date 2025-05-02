@@ -7,6 +7,14 @@ from transformers import pipeline
 from .base import Evaluator, BaseDataset
 
 
+class HuggingFaceDataset(BaseDataset):
+    def __init__(self, **kwargs):
+        """Dataset for HuggingFace specific models."""
+        super().__init__(**kwargs)
+    
+    def __getitem__(self, idx):
+        return str(super().__getitem__(idx)).replace("'", '"')
+
 class HuggingFaceModel(Evaluator):
     '''Evaluation for models from huggingface.co.'''
     

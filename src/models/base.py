@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
+from word2number import w2n
 
 
 class BaseDataset(Dataset):
@@ -12,6 +13,7 @@ class BaseDataset(Dataset):
     def __init__(self, 
                  df: pd.DataFrame, 
                  image_dir: Path = None, 
+                 system_prompt: str = str,
                  prompt_col: str = "prompt", 
                  image_url_col: str = "image_url",
                  image_path_col: str = "file_name"
@@ -22,11 +24,19 @@ class BaseDataset(Dataset):
         Args:
             df (pd.DataFrame): The DataFrame containing the dataset.
             image_dir (pathlib.Path): The directory containing the images.
+            system_prompt (str): The system prompt to use for the model.
+            prompt_col (str): The name of the column containing the prompts.
+            image_url_col (str): The name of the column containing the image URLs.
+            image_path_col (str): The name of the column containing the image file names.
         """
         assert prompt_col in df.columns, f'DataFrame must contain "{prompt_col}" column.'
         assert image_url_col in df.columns or image_path_col in df.columns, f'DataFrame must contain either "{image_url_col}" or "{image_path_col}" column.'
         
         self.prompts = df[prompt_col].tolist()
+        self.system = [{
+            "role": "system",
+            "content": system_prompt
+        }] if system_prompt else []        
         
         self.using_image_urls = image_url_col in df.columns
         self.images = df[image_url_col].tolist() if self.using_image_urls else df[image_path_col].tolist()
@@ -37,7 +47,7 @@ class BaseDataset(Dataset):
         return len(self.prompts)
     
     def __getitem__(self, idx):
-        return [{
+        return self.system + [{
             "role": "user",
             "content": [
                 {
@@ -61,6 +71,11 @@ class BaseDataset(Dataset):
             file_name = self.images[idx]
             with open(self.image_dir / file_name, "rb") as f:
                 return Image.open(f).convert("RGB")
+            
+    @staticmethod
+    def collate_fn(batch):
+        '''Collate function to flatten the batch of prompts and images.'''
+        return batch
 
 
 class Evaluator:
@@ -68,10 +83,7 @@ class Evaluator:
         """
         Base class for all evaluators.
         """        
-        self.system = [{
-            "role": "system",
-            "content": system_prompt
-        }] if system_prompt else []
+        self.system = system_prompt
         
     def __str__(self):
         return self.__class__.__name__.lower()
@@ -85,6 +97,21 @@ class Evaluator:
         """
         return len(df)
     
+    def intify(self, result: str) -> str:
+        '''Turns the model output into an integer. Returns -1 if it fails.'''
+        result = result.replace("-", " ").replace(",", "").split(".")[0]
+        if result.isdigit():
+            return result
+        
+        digits = ''.join(filter(str.isdigit, result))
+        if digits:
+            return digits
+        
+        try:
+            return str(w2n.word_to_num(result))
+        except ValueError:
+            return '-1'        
+    
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1, Container: BaseDataset = BaseDataset):
         """
         Evaluate the model with a DataFrame of prompts and images, saving the results to a CSV file.
@@ -96,16 +123,16 @@ class Evaluator:
             DatasetClass (BaseDataset): The class to use for the dataset (inheriting from BaseDataset).
         """        
         df = pd.read_csv(dataset_dir / "dataset.csv")
-        dataset = Container(df, image_dir=dataset_dir / "images")
+        dataset = Container(df, image_dir=dataset_dir / "images", system_prompt=self.system)
         
         batch_size = batch_size if batch_size > 0 else self.max_batch_size(df)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False , collate_fn=dataset.collate_fn)
         
         with open(result_file, "w") as f:
-            f.write("idx,result\n")
+            f.write("idx,result,uncleansed\n")
             for idx, prompt in enumerate(dataloader):
                 for line_idx, out in enumerate(self.eval_batch(idx, prompt), start=idx):
-                    f.write(f"{line_idx},{out}\n")
+                    f.write(f"{line_idx},{self.intify(out)},{out}\n")
                     
     def eval_single(self, prompt: list) -> str:
         """Evaluate a prompt."""

@@ -14,7 +14,7 @@ class ObjectCount(BaseModel):
 class OpenAIDataset(BaseDataset):
     '''Dataset for OpenAI specific prompts.'''
     def __getitem__(self, idx):
-        [{
+        return self.system + [{
             "role": "user",
             "content": [
                 {"type": "text", "text": self.prompts[idx]},
@@ -74,11 +74,11 @@ class OpenAIModel(Evaluator):
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         super().eval(dataset_dir, result_file, batch_size, OpenAIDataset)
     
-    def eval_single(self, prompt: list) -> str:
+    def eval_single(self, prompts: list) -> str:
         """
         Return the model's response to the prompt and image. 
         Args:
-            prompt (list): The prompt to ask the model.
+            prompts (list): The prompts to ask the model.
             
         Returns:
             str: The model's response.
@@ -86,7 +86,7 @@ class OpenAIModel(Evaluator):
         try:
             response = self.client.beta.chat.completions.parse(
                 model=self.model,
-                messages=self.system + prompt,
+                messages=prompts,
                 response_format=ObjectCount,
                 **self.params
             )
