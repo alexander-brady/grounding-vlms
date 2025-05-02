@@ -11,8 +11,4 @@ FSC-147 is a counting dataset that contains 6135 images, spanning 147 different 
 mkdir -p eval/datasets/FSC-147/images
 cd eval/datasets/FSC-147/images
 ```
-2. Download the dataset:
-```bash
-wget
-unzip
-```
+2. Download the [dataset from Google Drive](`https://drive.google.com/file/d/1ymDYrGs9DSRicfZbSCDiOu0ikGDh5k6S/view?usp=sharing`) and extract it, putting the files in the `eval/datasets/FSC-147/images` directory.

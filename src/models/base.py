@@ -97,8 +97,11 @@ class Evaluator:
         """
         return len(df)
     
-    def intify(self, result: str) -> str:
+    def intify(self, result) -> str:
         '''Turns the model output into an integer. Returns -1 if it fails.'''
+        if type(result) == int:
+            return str(result)
+        
         result = result.replace("-", " ").replace(",", "").split(".")[0]
         if result.isdigit():
             return result
