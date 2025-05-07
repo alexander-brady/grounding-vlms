@@ -14,7 +14,9 @@ class ObjectCount(BaseModel):
 class OpenAIDataset(BaseDataset):
     '''Dataset for OpenAI specific prompts.'''
     def __getitem__(self, idx):
-        return self.system + [{
+        return (
+            self.indices[idx],
+            self.system + [{
             "role": "user",
             "content": [
                 {"type": "text", "text": self.prompts[idx]},
@@ -26,7 +28,7 @@ class OpenAIDataset(BaseDataset):
                     },
                 }
             ],
-        }]
+        }])
     
     def process_image(self, idx):
         '''Turn image into model readable format.'''
@@ -96,10 +98,10 @@ class OpenAIModel(Evaluator):
         return response.choices[0].message.parsed.count
 
 
-    def eval_batch(self, batch_index: int, prompts: list) -> list:
+    def eval_batch(self, batch: list) -> list:
         '''To work with rate limits, we slow down the batch sending.'''
         curr_time = time.time()
-        res = super().eval_batch(batch_index, prompts)
+        res = super().eval_batch(batch)
         
         elapsed_time = time.time() - curr_time
         wait_time = max(0, 1 - elapsed_time)

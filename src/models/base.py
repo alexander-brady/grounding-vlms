@@ -10,14 +10,15 @@ from word2number import w2n
 
 class BaseDataset(Dataset):
     '''Turns prompts and images into a usable dataset. Defaults to HuggingFace Standard.'''
-    def __init__(self, 
-                 df: pd.DataFrame, 
-                 image_dir: Path = None, 
-                 system_prompt: str = str,
-                 prompt_col: str = "prompt", 
-                 image_url_col: str = "image_url",
-                 image_path_col: str = "file_name"
-            ):
+    def __init__(
+        self, 
+        df: pd.DataFrame, 
+        image_dir: Path = None, 
+        system_prompt: str = str,
+        prompt_col: str = "prompt", 
+        image_url_col: str = "image_url",
+        image_path_col: str = "file_name"
+    ):
         """
         Base class for all datasets.
         
@@ -32,6 +33,7 @@ class BaseDataset(Dataset):
         assert prompt_col in df.columns, f'DataFrame must contain "{prompt_col}" column.'
         assert image_url_col in df.columns or image_path_col in df.columns, f'DataFrame must contain either "{image_url_col}" or "{image_path_col}" column.'
         
+        self.indices = df.index.tolist()
         self.prompts = df[prompt_col].tolist()
         self.system = [{
             "role": "system",
@@ -47,7 +49,9 @@ class BaseDataset(Dataset):
         return len(self.prompts)
     
     def __getitem__(self, idx):
-        return self.system + [{
+        return (
+            self.indices[idx],
+            self.system + [{
             "role": "user",
             "content": [
                 {
@@ -56,7 +60,7 @@ class BaseDataset(Dataset):
                 },
                 {"type": "text", "text": self.prompts[idx]}
             ],
-        }]
+        }])
             
     def process_image(self, idx):
         '''Turn image into model readable format.'''
@@ -102,7 +106,7 @@ class Evaluator:
         if type(result) == int:
             return str(result)
         
-        result = result.replace("-", " ").replace(",", "").split(".")[0]
+        result = result.replace("-", " ").replace(",", "").split(".")[0].lower().strip()
         if result.isdigit():
             return result
         
@@ -132,18 +136,18 @@ class Evaluator:
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False , collate_fn=dataset.collate_fn)
         
         with open(result_file, "w") as f:
-            f.write("idx,result,uncleansed\n")
-            for idx, prompt in enumerate(dataloader):
-                for line_idx, out in enumerate(self.eval_batch(idx, prompt), start=idx):
-                    f.write(f"{line_idx},{self.intify(out)},{out}\n")
+            f.write("idx,result,raw_result\n")
+            for batch in dataloader:
+                for idx, count in self.eval_batch(batch):
+                    f.write(f"{idx},{self.intify(count)},{count}\n")
                     
     def eval_single(self, prompt: list) -> str:
         """Evaluate a prompt."""
         raise NotImplementedError("The eval method must be implemented by subclasses.")
     
-    def eval_batch(self, batch_index: int, prompts: list) -> list:
+    def eval_batch(self, batch: list) -> list:
         """Evaluate a batch of prompts and images."""
         return [
-            self.eval_single(prompt)
-            for prompt in prompts
+            (idx, self.eval_single(prompt))
+            for idx, prompt in batch 
         ]
