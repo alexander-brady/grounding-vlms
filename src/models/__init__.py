@@ -1,5 +1,6 @@
 from .openai_model import OpenAIModel
 from .hf_model import HuggingFaceModel
+from .countgd_model import CountGDModel
 
 def load_model(engine_name: str, **kwargs):
     """
@@ -15,6 +16,7 @@ def load_model(engine_name: str, **kwargs):
     model_map = {
         "openai": OpenAIModel,
         "huggingface": HuggingFaceModel,
+        "countgd": CountGDModel,
         # Add other models here as needed
     }
     
