@@ -35,6 +35,11 @@ To evaluate a model on the dataset, run:
 python src/run_eval.py
 ```
 
+The evaluations will be saved by default in `eval/results/` folder. They will be saved in a csv file with the following columns:
+- `index`: The index of the image in the dataset
+- `result`: The model's prediction, converted to an integer
+- `raw_output`: The raw output of the model, which may not be in integer format (e.g. "three", "approximately 32")
+
 ## Using Config Files
 
 Place model config files in the `models/` directory. Each config must include:
