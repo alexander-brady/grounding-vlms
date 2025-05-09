@@ -104,6 +104,9 @@ def parse_args():
     args = parser.parse_args()
     if args.config:
         args.config = args.config.replace(".yaml", "")
+        # Fix for Qwen model name mismatch
+        if "Qwen2.5" in args.config:
+            args.config = args.config.replace("Qwen2.5", "Qwen-2.5")
     
     if not args.config:
         missing = [ arg for arg in ["engine", "model"] if not getattr(args, arg)]
