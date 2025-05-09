@@ -1,10 +1,11 @@
 # models/gemma-3-12b-it.yaml
 engine: huggingface
 model: google/gemma-3-12b-it           # HF repo ID for instruction‐tuned 12 B model :contentReference[oaicite:2]{index=2}
-processor: google/gemma-3-12b-it
+# processor: google/gemma-3-12b-it
 #system_prompt: "You are a helpful assistant."
 system_prompt: >-
   You are a vision-language evaluator. When given an image and a question asking you to count items—phrases may vary (“How many”, “Count the number of”, “Number of”, etc.)—respond with the integer count only, with no additional words or punctuation.
 max_new_tokens: 256
-do_sample: false
+use_fast: true
+# do_sample: false
 batch_size: 1
