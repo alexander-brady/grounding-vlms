@@ -6,6 +6,7 @@ import requests
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from word2number import w2n
+from .results import create_results
 
 
 class BaseDataset(Dataset):
@@ -49,6 +50,9 @@ class BaseDataset(Dataset):
         return len(self.prompts)
     
     def __getitem__(self, idx):
+        image = self.process_image(idx)
+        if not image:
+            return self.indices[idx], None
         return (
             self.indices[idx],
             self.system + [{
@@ -56,7 +60,7 @@ class BaseDataset(Dataset):
             "content": [
                 {
                     "type": "image",
-                    "image": self.process_image(idx),
+                    "image": image
                 },
                 {"type": "text", "text": self.prompts[idx]}
             ],
@@ -70,7 +74,7 @@ class BaseDataset(Dataset):
             if response.status_code == 200:
                 return Image.open(BytesIO(response.content)).convert("RGB")
             else:
-                raise ValueError(f"Failed to fetch image from URL: {image_url}")
+                raise None
         else:
             file_name = self.images[idx]
             with open(self.image_dir / file_name, "rb") as f:
@@ -141,6 +145,11 @@ class Evaluator:
                 for idx, count in self.eval_batch(batch):
                     f.write(f"{idx},{self.intify(count)},{count}\n")
                     
+        with open(result_file, "r") as f:
+            if len(dataset) == sum(1 for _ in f) - 1:
+                create_results() # Create results if all rows are filled.
+                
+                    
     def eval_single(self, prompt: list) -> str:
         """Evaluate a prompt."""
         raise NotImplementedError("The eval method must be implemented by subclasses.")
@@ -148,6 +157,7 @@ class Evaluator:
     def eval_batch(self, batch: list) -> list:
         """Evaluate a batch of prompts and images."""
         return [
-            (idx, self.eval_single(prompt))
+            (idx, self.eval_single(prompt)) if prompt
+            else (idx, 'ERROR Image url failed'):
             for idx, prompt in batch 
         ]

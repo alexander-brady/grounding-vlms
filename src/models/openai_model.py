@@ -2,7 +2,6 @@ import base64, time
 from pathlib import Path
 from pydantic import BaseModel
 
-from openai import OpenAI
 from .base import Evaluator, BaseDataset
 
 
@@ -50,16 +49,15 @@ class OpenAIModel(Evaluator):
         # Limit is 50000 or 209715200b
         return min(45000, len(items))
     
-    def __init__(self, model: str, client=OpenAI, system_prompt: str=None, **params):
+    def __init__(self, model: str, client, **params):
         """
         Args:
             model (str): The model to use (e.g. "gpt-4.1").
-            client (callable): The client to use for the model (default: OpenAI).
-            system_prompt (str): The system prompt to use for the model.
+            client: The client to use for the model (default: OpenAI, set in __init__.py).
             **params: Additional arguments for the model (temperature, max_completion_tokens, etc.)
         """
         super().__init__(params.pop("system_prompt", None))
-        self.client = client()
+        self.client = client
         
         openai_params = {
             "temperature", "frequency_penalty", 
@@ -93,7 +91,7 @@ class OpenAIModel(Evaluator):
                 **self.params
             )
         except Exception as e:
-            raise Exception(f"Error: {e}")
+            return  'ERROR: ' + str(e)
         
         return response.choices[0].message.parsed.count
 

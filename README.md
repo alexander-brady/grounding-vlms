@@ -82,9 +82,13 @@ Use one of:
 ## Supported Backends
 > Set the backend using the `engine` parameter
 
-### openai
+### openai, google, anthropic, xai
 
-For OpenAI-style API models. Requires `OPENAI_API_KEY` set in `.env`. Uses OpenAI chat completions by default.
+For OpenAI-sdk API models. Requires corresponding API key set in `.env`. Uses structured chat completions to get the model's predicted count.
+- `openai`: OpenAI models (e.g. gpt-4.1). Requires `OPENAI_API_KEY`.
+- `google`: Gemini models (e.g. Gemini-1.5). Requires `GEMINI_API_KEY`.
+- `anthropic`: Anthropic models (e.g. Claude-3). Requires `ANTHROPIC_API_KEY`.
+- `xai`: xAI models (e.g. Grok). Requires `XAI_API_KEY`.
 
 Supported params:
 `temperature`, `frequency_penalty`, `max_completion_tokens`, `reasoning_effort`, `seed`, `top_p`

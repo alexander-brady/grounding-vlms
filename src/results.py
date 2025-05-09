@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore')
 
 # ─── Project directories ───────────────────────────────────────────────────────
 # script.py now in /src/, so BASE_DIR is project root:
-BASE_DIR       = Path(__file__).resolve().parent.parent
+BASE_DIR       = Path(__file__).resolve().parent.parent.parent
 EVAL_DIR       = BASE_DIR / 'eval'
 ANALYSIS_DIR   = EVAL_DIR / 'analysis'
 DATA_DIR       = EVAL_DIR / 'data'

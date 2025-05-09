@@ -2,6 +2,9 @@ from .openai_model import OpenAIModel
 from .hf_model import HuggingFaceModel
 from .countgd_model import CountGDModel
 
+import os
+from openai import OpenAI
+
 def load_model(engine_name: str, **kwargs):
     """
     Load the specified model.
@@ -15,6 +18,9 @@ def load_model(engine_name: str, **kwargs):
     """
     model_map = {
         "openai": OpenAIModel,
+        "google": OpenAIModel,
+        "anthropic": OpenAIModel,
+        "xai": OpenAIModel,
         "huggingface": HuggingFaceModel,
         "countgd": CountGDModel,
         # Add other models here as needed
@@ -23,4 +29,26 @@ def load_model(engine_name: str, **kwargs):
     if engine_name not in model_map:
         raise ValueError(f"Model '{engine_name}' is not supported. Available models: {list(model_map.keys())}.")
     
-    return model_map[engine_name](**kwargs)
+    engine_params = {
+        "openai": { 'client': OpenAI() },
+        "google": {
+            'client': OpenAI(
+                api_key=os.getenv("GEMINI_API_KEY"),
+                base_url='https://generativelanguage.googleapis.com/v1beta/openai/"'
+            )
+        },
+        "anthropic": {
+            'client': OpenAI(
+                api_key=os.getenv("ANTHROPIC_API_KEY"),
+                base_url='https://api.anthropic.com/v1/'
+            )
+        },
+        "xai": {
+            'client': OpenAI(
+                api_key=os.getenv("XAI_API_KEY"),
+                base_url='https://api.x.ai/v1'
+            )
+        },
+    }
+    
+    return model_map[engine_name](**engine_params.get(engine_name, {}), **kwargs)

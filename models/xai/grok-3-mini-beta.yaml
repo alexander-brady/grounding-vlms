@@ -1,0 +1,4 @@
+engine: xai
+model: grok-3-mini-beta
+system_prompt: You are a helpful assistant.
+batch_size: 10 # Number of examples to process per second
