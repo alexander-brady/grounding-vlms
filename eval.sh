@@ -4,7 +4,7 @@
 #SBATCH --error=logs/benchmark_%j.err
 #SBATCH --ntasks=1
 #SBATCH --tmp=64G
-#SBATCH --mem-per-cpu=64G
+#SBATCH --mem-per-cpu=32G
 #SBATCH --gpus-per-node=1
 #SBATCH --gres=gpumem:32g
 #SBATCH --nodes=1
@@ -14,8 +14,12 @@
 # MODEL=${1:-"openai/gpt-4-1"}
 # MODEL=${1:-"huggingface/gemma-3-4b-it"}
 # MODEL=${1:-"openai/o4-mini"}
-MODEL=${1:-"counting/countgd"}
+# MODEL=${1:-"counting/countgd"}
 # MODEL=${1:-"huggingface/Qwen2.5-VL-3B-Instruct"}
+# MODEL=${1:-"huggingface/Llama-4-Scout-17B-16E-Instruct"}
+# MODEL=${1:-"huggingface/Qwen2.5-VL-7B-Instruct"}
+MODEL=${1:-"huggingface/gemma-3-12b-it"}
+
 # Load the necessary modules
 module load stack/2024-06 gcc/12.2.0 python/3.11.6 cuda/11.3.1 eth_proxy
 
@@ -36,7 +40,7 @@ pip install -r requirements.txt --quiet
 export HF_HOME="$SCRATCH/pmlr/$MODEL/cache"
 export TRANSFORMERS_CACHE="$SCRATCH/pmlr/$MODEL/cache"
 
-echo "Starting Benchmarking job for $MODEL"
+echo "$USER starting Benchmarking job for $MODEL"
 echo "Job started at $(date)"
 
 python src/run_eval.py \
