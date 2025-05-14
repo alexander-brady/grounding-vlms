@@ -12,13 +12,14 @@ class ObjectCount(BaseModel):
     
 class OpenAIDataset(BaseDataset):
     '''Dataset for OpenAI specific prompts.'''
-    def __init__(self, force_download: bool = False, **kwargs):
+    def __init__(self, df, force_download: bool=False, **kwargs):
         """
         Args:
-            force_download (bool): Whether to force download the dataset.
+            df (pd.DataFrame): The DataFrame containing the dataset.
+            force_download (bool): Whether to force download the images.
             **kwargs: Additional arguments for the dataset.
         """
-        super().__init__(**kwargs)
+        super().__init__(df, **kwargs)
         self.force_download = force_download
     
     def __getitem__(self, idx):
@@ -92,6 +93,7 @@ class OpenAIModel(Evaluator):
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         super().eval(dataset_dir, result_file, batch_size, OpenAIDataset, force_download=self.force_download)
     
+
     def eval_single(self, prompts: list) -> str:
         """
         Return the model's response to the prompt and image. 
@@ -107,20 +109,20 @@ class OpenAIModel(Evaluator):
                 messages=prompts,
                 response_format=ObjectCount,
                 **self.params
-            )
+            ).choices[0].message
         except Exception as e:
             return  'ERROR: ' + str(e)
         
         if response.refusal:
             return 'ERROR: ' + response.refusal
         
-        elif response.choices[0].message.parsed is None:
+        elif response.parsed is None:
             return 'ERROR: Output is None'
         
-        elif response.choices[0].message.parsed.count is None:
+        elif response.parsed.count is None:
             return 'ERROR: Output count is None'
         
-        return response.choices[0].message.parsed.count
+        return response.parsed.count
 
 
     def eval_batch(self, batch: list) -> list:

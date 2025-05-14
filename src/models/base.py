@@ -151,11 +151,7 @@ class Evaluator:
             for batch in dataloader:
                 for idx, count in self.eval_batch(batch):
                     f.write(f"{idx},{self.intify(count)},{count}\n")
-                    
-        # with open(result_file, "r") as f:
-        #     if len(dataset) == sum(1 for _ in f) - 1:
-        #         create_results() # Create results if all rows are filled.
-                
+                                    
                     
     def eval_single(self, prompt: list) -> str:
         """Evaluate a prompt."""
