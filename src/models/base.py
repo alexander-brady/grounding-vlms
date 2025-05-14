@@ -6,7 +6,6 @@ import requests
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from word2number import w2n
-from .results import create_results
 
 
 class BaseDataset(Dataset):
@@ -18,7 +17,7 @@ class BaseDataset(Dataset):
         system_prompt: str = str,
         prompt_col: str = "prompt", 
         image_url_col: str = "image_url",
-        image_path_col: str = "file_name"
+        image_path_col: str = "file_name",
     ):
         """
         Base class for all datasets.
@@ -34,7 +33,11 @@ class BaseDataset(Dataset):
         assert prompt_col in df.columns, f'DataFrame must contain "{prompt_col}" column.'
         assert image_url_col in df.columns or image_path_col in df.columns, f'DataFrame must contain either "{image_url_col}" or "{image_path_col}" column.'
         
-        self.indices = df.index.tolist()
+        if 'idx' in df.columns:
+            self.indices = df['idx'].tolist()
+        else:
+            self.indices = df.index.tolist()
+            
         self.prompts = df[prompt_col].tolist()
         self.system = [{
             "role": "system",
@@ -110,6 +113,9 @@ class Evaluator:
         if type(result) == int:
             return str(result)
         
+        if result.startswith("ERROR"):
+            return '-1'
+        
         result = result.replace("-", " ").replace(",", "").split(".")[0].lower().strip()
         if result.isdigit():
             return result
@@ -123,7 +129,7 @@ class Evaluator:
         except ValueError:
             return '-1'        
     
-    def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1, Container: BaseDataset = BaseDataset):
+    def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1, Container: BaseDataset = BaseDataset, **container_kwargs):
         """
         Evaluate the model with a DataFrame of prompts and images, saving the results to a CSV file.
         
@@ -132,9 +138,10 @@ class Evaluator:
             result_file (pathlib.Path): Where to save the results.
             batch_size (int): The number of samples to process in each batch.
             DatasetClass (BaseDataset): The class to use for the dataset (inheriting from BaseDataset).
+            container_kwargs (dict): Additional arguments for the dataset class.
         """        
         df = pd.read_csv(dataset_dir / "dataset.csv")
-        dataset = Container(df, image_dir=dataset_dir / "images", system_prompt=self.system)
+        dataset = Container(df, image_dir=dataset_dir / "images", system_prompt=self.system, **container_kwargs)
         
         batch_size = batch_size if batch_size > 0 else self.max_batch_size(df)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False , collate_fn=dataset.collate_fn)
@@ -145,9 +152,9 @@ class Evaluator:
                 for idx, count in self.eval_batch(batch):
                     f.write(f"{idx},{self.intify(count)},{count}\n")
                     
-        with open(result_file, "r") as f:
-            if len(dataset) == sum(1 for _ in f) - 1:
-                create_results() # Create results if all rows are filled.
+        # with open(result_file, "r") as f:
+        #     if len(dataset) == sum(1 for _ in f) - 1:
+        #         create_results() # Create results if all rows are filled.
                 
                     
     def eval_single(self, prompt: list) -> str:
@@ -158,6 +165,6 @@ class Evaluator:
         """Evaluate a batch of prompts and images."""
         return [
             (idx, self.eval_single(prompt)) if prompt
-            else (idx, 'ERROR Image url failed'):
+            else (idx, 'ERROR: Image url failed')
             for idx, prompt in batch 
         ]

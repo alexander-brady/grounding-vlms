@@ -34,8 +34,9 @@ def load_model(engine_name: str, **kwargs):
         "google": {
             'client': OpenAI(
                 api_key=os.getenv("GEMINI_API_KEY"),
-                base_url='https://generativelanguage.googleapis.com/v1beta/openai/"'
-            )
+                base_url='https://generativelanguage.googleapis.com/v1beta/openai/'
+            ),
+            'force_download': True
         },
         "anthropic": {
             'client': OpenAI(

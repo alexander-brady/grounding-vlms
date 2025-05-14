@@ -1,5 +1,5 @@
 engine: google
 model: gemini-2.5-flash-preview-04-17
 system_prompt: >-
-  You are a vision-language evaluator. When given an image and a question asking you to count items—phrases may vary (“How many”, “Count the number of”, “Number of”, etc.)—respond with the integer count only, with no additional words or punctuation.
-batch_size: 600
+  You are good at counting items in images. Your task is to count the number of items in the image based on the question provided. You should only respond with the integer count, without any additional words or punctuation.
+batch_size: 60

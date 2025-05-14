@@ -1,4 +1,4 @@
-import base64, time
+import base64, time, requests
 from pathlib import Path
 from pydantic import BaseModel
 
@@ -12,6 +12,15 @@ class ObjectCount(BaseModel):
     
 class OpenAIDataset(BaseDataset):
     '''Dataset for OpenAI specific prompts.'''
+    def __init__(self, force_download: bool = False, **kwargs):
+        """
+        Args:
+            force_download (bool): Whether to force download the dataset.
+            **kwargs: Additional arguments for the dataset.
+        """
+        super().__init__(**kwargs)
+        self.force_download = force_download
+    
     def __getitem__(self, idx):
         return (
             self.indices[idx],
@@ -31,8 +40,15 @@ class OpenAIDataset(BaseDataset):
     
     def process_image(self, idx):
         '''Turn image into model readable format.'''
-        if self.using_image_urls:
+        if self.using_image_urls and not self.force_download:
             return self.images[idx]
+        elif self.using_image_urls:
+            image_url = self.images[idx]
+            response = requests.get(image_url)
+            if response.status_code == 200:
+                return f"data:image/jpeg;base64,{base64.b64encode(response.content).decode('utf-8')}"
+            else:
+                return None
         else:
             file_name = self.images[idx]
             with open(self.image_dir / file_name, "rb") as f:
@@ -49,11 +65,12 @@ class OpenAIModel(Evaluator):
         # Limit is 50000 or 209715200b
         return min(45000, len(items))
     
-    def __init__(self, model: str, client, **params):
+    def __init__(self, model: str, client, force_download: bool = False, **params):
         """
         Args:
             model (str): The model to use (e.g. "gpt-4.1").
             client: The client to use for the model (default: OpenAI, set in __init__.py).
+            force_download (bool): Whether to force download the images from url (needed for e.g. Gemini).
             **params: Additional arguments for the model (temperature, max_completion_tokens, etc.)
         """
         super().__init__(params.pop("system_prompt", None))
@@ -65,6 +82,7 @@ class OpenAIModel(Evaluator):
             "reasoning_effort", "seed", 
         }
         
+        self.force_download = force_download
         self.model = model
         self.params = {
             key: value for key, value 
@@ -72,7 +90,7 @@ class OpenAIModel(Evaluator):
         }
     
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
-        super().eval(dataset_dir, result_file, batch_size, OpenAIDataset)
+        super().eval(dataset_dir, result_file, batch_size, OpenAIDataset, force_download=self.force_download)
     
     def eval_single(self, prompts: list) -> str:
         """
@@ -92,6 +110,15 @@ class OpenAIModel(Evaluator):
             )
         except Exception as e:
             return  'ERROR: ' + str(e)
+        
+        if response.refusal:
+            return 'ERROR: ' + response.refusal
+        
+        elif response.choices[0].message.parsed is None:
+            return 'ERROR: Output is None'
+        
+        elif response.choices[0].message.parsed.count is None:
+            return 'ERROR: Output count is None'
         
         return response.choices[0].message.parsed.count
 

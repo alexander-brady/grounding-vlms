@@ -14,6 +14,8 @@ logs/
 # Dataset 
 images/
 results/
+valid_results/
+analysis/
 
 # Temporary files
 tmp/
