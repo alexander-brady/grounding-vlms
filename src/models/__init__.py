@@ -42,7 +42,8 @@ def load_model(engine_name: str, **kwargs):
             'client': OpenAI(
                 api_key=os.getenv("ANTHROPIC_API_KEY"),
                 base_url='https://api.anthropic.com/v1/'
-            )
+            ),
+            'structured_output': False
         },
         "xai": {
             'client': OpenAI(

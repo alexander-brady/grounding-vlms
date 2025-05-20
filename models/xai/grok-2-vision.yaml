@@ -1,5 +1,5 @@
 engine: xai
-model: grok-3-mini-beta
+model: grok-2-vision-1212
 system_prompt: >-
   You are a vision-language evaluator. When given an image and a question asking you to count items—phrases may vary (“How many”, “Count the number of”, “Number of”, etc.)—respond with the integer count only, with no additional words or punctuation.
 batch_size: 500 # Number of examples to process per second

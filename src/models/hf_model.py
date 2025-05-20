@@ -27,14 +27,18 @@ class HuggingFaceModel(Evaluator):
         
     def eval_batch(self, batch: list) -> list:
         """Evaluate a batch of prompts and images."""
-        indices, prompts = zip(*batch)
+        indices, prompts = zip(*batch)    
+        print(prompts, flush=True)
+        print("Batch size:", len(prompts))
+        print(batch, flush=True)
         outputs = self.model(
             text=prompts,
             batch_size=len(prompts), 
             return_full_text=False, 
             **self.params
         )
+        
         return [ 
-                (idx, out[0]['generated_text'])
-                for idx, out in zip(indices, outputs)
-            ]
+            (idx, out[0]['generated_text'])
+            for idx, out in zip(indices, outputs)
+        ]

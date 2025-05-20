@@ -21,7 +21,7 @@ class OpenAIDataset(BaseDataset):
         """
         super().__init__(df, **kwargs)
         self.force_download = force_download
-    
+        
     def __getitem__(self, idx):
         return (
             self.indices[idx],
@@ -66,12 +66,17 @@ class OpenAIModel(Evaluator):
         # Limit is 50000 or 209715200b
         return min(45000, len(items))
     
-    def __init__(self, model: str, client, force_download: bool = False, **params):
+    def __init__(self, model: str, client, 
+        force_download: bool = False, 
+        structured_output: bool = True,
+        **params
+    ):
         """
         Args:
             model (str): The model to use (e.g. "gpt-4.1").
             client: The client to use for the model (default: OpenAI, set in __init__.py).
             force_download (bool): Whether to force download the images from url (needed for e.g. Gemini).
+            structured_output (bool): Whether to use structured output to constrain the output to integers.
             **params: Additional arguments for the model (temperature, max_completion_tokens, etc.)
         """
         super().__init__(params.pop("system_prompt", None))
@@ -84,6 +89,7 @@ class OpenAIModel(Evaluator):
         }
         
         self.force_download = force_download
+        self.structured_output = structured_output
         self.model = model
         self.params = {
             key: value for key, value 
@@ -104,6 +110,16 @@ class OpenAIModel(Evaluator):
             str: The model's response.
         """
         try:
+            if not self.structured_output:
+                # If the model does not support structured output,
+                # we need to use the default response format.
+                return self.client.chat.completions.create(
+                    model=self.model,
+                    messages=prompts,
+                    **self.params
+                ).choices[0].message.content               
+                
+            # Else we use parsing to constrain the output to the expected format.
             response = self.client.beta.chat.completions.parse(
                 model=self.model,
                 messages=prompts,

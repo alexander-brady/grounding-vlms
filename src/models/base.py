@@ -77,7 +77,7 @@ class BaseDataset(Dataset):
             if response.status_code == 200:
                 return Image.open(BytesIO(response.content)).convert("RGB")
             else:
-                raise None
+                return None
         else:
             file_name = self.images[idx]
             with open(self.image_dir / file_name, "rb") as f:
@@ -86,7 +86,9 @@ class BaseDataset(Dataset):
     @staticmethod
     def collate_fn(batch):
         '''Collate function to flatten the batch of prompts and images.'''
-        return batch
+        valid = [(idx, prompt) for idx, prompt in batch if prompt is not None]
+        invalid = [idx for idx, prompt in batch if prompt is None]
+        return valid, invalid
 
 
 class Evaluator:
@@ -108,6 +110,7 @@ class Evaluator:
         """
         return len(df)
     
+    
     def intify(self, result) -> str:
         '''Turns the model output into an integer. Returns -1 if it fails.'''
         if type(result) == int:
@@ -128,6 +131,7 @@ class Evaluator:
             return str(w2n.word_to_num(result))
         except ValueError:
             return '-1'        
+        
     
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1, Container: BaseDataset = BaseDataset, **container_kwargs):
         """
@@ -148,7 +152,10 @@ class Evaluator:
         
         with open(result_file, "w") as f:
             f.write("idx,result,raw_result\n")
-            for batch in dataloader:
+            for batch, failed in dataloader:
+                for idx in failed:
+                    f.write(f"{idx},-1,ERROR: Image url failed\n")
+                    
                 for idx, count in self.eval_batch(batch):
                     f.write(f"{idx},{self.intify(count)},{count}\n")
                                     
@@ -157,10 +164,10 @@ class Evaluator:
         """Evaluate a prompt."""
         raise NotImplementedError("The eval method must be implemented by subclasses.")
     
+    
     def eval_batch(self, batch: list) -> list:
         """Evaluate a batch of prompts and images."""
         return [
-            (idx, self.eval_single(prompt)) if prompt
-            else (idx, 'ERROR: Image url failed')
+            (idx, self.eval_single(prompt))
             for idx, prompt in batch 
         ]

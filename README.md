@@ -76,7 +76,7 @@ Use one of:
 - `--params`: Override parameters (JSON format), e.g. `'{ "temperature": 0.7, "top_k": 5 }'`  
 - `--batch_size`: Batch size for batch execution (default: no batch). Set to -1 to set the whole dataset as a batch.
 - `--output_dir`: Output directory (default: `eval/datasets/type/model`)  
-- `--datasets`: Comma-separated dataset folders (default: `FSC-147,GeckoNum,PixMo_Count,TallyQA`)  
+- `--datasets`: Comma-separated dataset folders (default: `FSC-147,GeckoNum,PixMo_Count,TallyQA`)
 
 
 ## Supported Backends
@@ -90,10 +90,12 @@ For OpenAI-sdk API models. Requires corresponding API key set in `.env`. Uses st
 - `anthropic`: Anthropic models (e.g. Claude-3). Requires `ANTHROPIC_API_KEY`.
 - `xai`: xAI models (e.g. Grok). Requires `XAI_API_KEY`.
 
-Supported params:
+Supported sampling params:
 `temperature`, `frequency_penalty`, `max_completion_tokens`, `reasoning_effort`, `seed`, `top_p`
 
-<!-- Batch execution can take up to 24 hours and must be retrieved manually. File retrieval can be done with `src/retrieval.ipynb`. -->
+Additional params:
+- `force_download`: Force download of the images instead of passing the url (default: False)
+- `structured_output`: Use structured output API for constrained decoding (default: True)
 
 ### huggingface
 

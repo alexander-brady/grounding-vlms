@@ -409,12 +409,14 @@ def create_results(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
             summary['model'], summary['dataset'] = model_dir.name, name
             results.append(summary)
 
-    # write summary
-    pd.DataFrame(results)[[
+    # Sort by dataset and write to CSV
+    summary_df = pd.DataFrame(results)[[
         'model','dataset','n_examples','accuracy',
         'over_rate','under_rate','mean_error',
         'MAE','MAPE (%)','sMAPE (%)'
-    ]].to_csv(out / 'summary.csv', index=False)
+    ]]
+    summary_df = summary_df.sort_values(by=['dataset', 'model'])
+    summary_df.to_csv(out / 'summary.csv', index=False)
 
     print("Summary saved to", out / 'summary.csv')
     plot_rolling_accuracy_all_models()
