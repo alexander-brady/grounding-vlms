@@ -59,14 +59,9 @@ class OpenAIDataset(BaseDataset):
 class OpenAIModel(Evaluator):
     '''Evaluation for models using OpenAI-style APIs.'''
     
-    def __str__(self):
-        return "openai"
-    
-    def max_batch_size(self, items: list) -> int:
-        # Limit is 50000 or 209715200b
-        return min(45000, len(items))
-    
-    def __init__(self, model: str, client, 
+    def __init__(self, 
+        model: str, 
+        client: object,
         force_download: bool = False, 
         structured_output: bool = True,
         **params
@@ -94,10 +89,23 @@ class OpenAIModel(Evaluator):
         self.params = {
             key: value for key, value 
             in params.items() if key in openai_params
-        }
+        }        
+        
+        
+    @staticmethod
+    def max_batch_size(items: list) -> int:
+        # Limit is 50000 or 209715200b
+        return min(45000, len(items))
+    
     
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
-        super().eval(dataset_dir, result_file, batch_size, OpenAIDataset, force_download=self.force_download)
+        super().eval(
+            dataset_dir, 
+            result_file, 
+            batch_size,
+            Container=OpenAIDataset,
+            force_download=self.force_download
+        )
     
 
     def eval_single(self, prompts: list) -> str:
@@ -126,11 +134,12 @@ class OpenAIModel(Evaluator):
                 response_format=ObjectCount,
                 **self.params
             ).choices[0].message
+            
         except Exception as e:
             return  'ERROR: ' + str(e)
         
         if response.refusal:
-            return 'ERROR: ' + response.refusal
+            return 'ERROR: (Refusal) ' + response.refusal
         
         elif response.parsed is None:
             return 'ERROR: Output is None'

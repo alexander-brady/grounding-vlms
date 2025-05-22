@@ -1,11 +1,11 @@
+import requests
 from io import BytesIO
 from pathlib import Path
-
-import pandas as pd
-import requests
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-from word2number import w2n
+
+import pandas as pd
+from .utils import intify
 
 
 class BaseDataset(Dataset):
@@ -41,7 +41,10 @@ class BaseDataset(Dataset):
         self.prompts = df[prompt_col].tolist()
         self.system = [{
             "role": "system",
-            "content": system_prompt
+            "content": [{
+                'type': "text",
+                'text': system_prompt
+            }]
         }] if system_prompt else []        
         
         self.using_image_urls = image_url_col in df.columns
@@ -86,22 +89,23 @@ class BaseDataset(Dataset):
     @staticmethod
     def collate_fn(batch):
         '''Collate function to flatten the batch of prompts and images.'''
-        valid = [(idx, prompt) for idx, prompt in batch if prompt is not None]
-        invalid = [idx for idx, prompt in batch if prompt is None]
-        return valid, invalid
-
+        valid_indices = [idx for idx, prompt in batch if prompt is not None]
+        invalid_indices = [idx for idx, prompt in batch if prompt is None]
+        prompts = [prompt for _, prompt in batch if prompt is not None]
+        
+        return valid_indices, prompts, invalid_indices
+    
 
 class Evaluator:
+    """Base class for all evaluators."""        
     def __init__(self, system_prompt: str = None):
-        """
-        Base class for all evaluators.
-        """        
         self.system = system_prompt
         
     def __str__(self):
         return self.__class__.__name__.lower()
     
-    def max_batch_size(self, df: pd.DataFrame) -> int:
+    @staticmethod
+    def max_batch_size(df: pd.DataFrame) -> int:
         """
         Returns the maximum batch size for the model.
         
@@ -110,30 +114,13 @@ class Evaluator:
         """
         return len(df)
     
-    
-    def intify(self, result) -> str:
-        '''Turns the model output into an integer. Returns -1 if it fails.'''
-        if type(result) == int:
-            return str(result)
-        
-        if result.startswith("ERROR"):
-            return '-1'
-        
-        result = result.replace("-", " ").replace(",", "").split(".")[0].lower().strip()
-        if result.isdigit():
-            return result
-        
-        digits = ''.join(filter(str.isdigit, result))
-        if digits:
-            return digits
-        
-        try:
-            return str(w2n.word_to_num(result))
-        except ValueError:
-            return '-1'        
-        
-    
-    def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1, Container: BaseDataset = BaseDataset, **container_kwargs):
+    def eval(self, 
+        dataset_dir: Path,
+        result_file: Path, 
+        batch_size: int = 1, 
+        pad_batches: bool = False,
+        Container: BaseDataset = BaseDataset, 
+        **container_kwargs):
         """
         Evaluate the model with a DataFrame of prompts and images, saving the results to a CSV file.
         
@@ -141,8 +128,9 @@ class Evaluator:
             dataset_dir (pathlib.Path): The directory containing the dataset.
             result_file (pathlib.Path): Where to save the results.
             batch_size (int): The number of samples to process in each batch.
-            DatasetClass (BaseDataset): The class to use for the dataset (inheriting from BaseDataset).
-            container_kwargs (dict): Additional arguments for the dataset class.
+            pad_batches (bool): Whether to pad the batch with empty samples (ensures all batches are the same size).
+            Container (BaseDataset): The class to use for the dataset.
+            **container_kwargs: Additional arguments for the dataset class.
         """        
         df = pd.read_csv(dataset_dir / "dataset.csv")
         dataset = Container(df, image_dir=dataset_dir / "images", system_prompt=self.system, **container_kwargs)
@@ -152,22 +140,25 @@ class Evaluator:
         
         with open(result_file, "w") as f:
             f.write("idx,result,raw_result\n")
-            for batch, failed in dataloader:
+            for indices, prompts, failed in dataloader:
                 for idx in failed:
                     f.write(f"{idx},-1,ERROR: Image url failed\n")
+                
+                if pad_batches:
+                    prompts += ['Respond with -1'] * (batch_size - len(prompts))
                     
-                for idx, count in self.eval_batch(batch):
-                    f.write(f"{idx},{self.intify(count)},{count}\n")
-                                    
+                for idx, count in zip(indices, self.eval_batch(prompts)):
+                    f.write(f"{idx},{intify(count)},{count}\n")
+                                
                     
     def eval_single(self, prompt: list) -> str:
         """Evaluate a prompt."""
         raise NotImplementedError("The eval method must be implemented by subclasses.")
     
     
-    def eval_batch(self, batch: list) -> list:
+    def eval_batch(self, prompts: list) -> list:
         """Evaluate a batch of prompts and images."""
         return [
-            (idx, self.eval_single(prompt))
-            for idx, prompt in batch 
+            self.eval_single(prompt)
+            for prompt in prompts
         ]

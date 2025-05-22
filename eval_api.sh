@@ -47,14 +47,13 @@ pip install -r requirements.txt --quiet
 
 # Model paths
 export HF_HOME="$SCRATCH/pmlr/$MODEL/cache"
-export TRANSFORMERS_CACHE="$SCRATCH/pmlr/$MODEL/cache"
 
 echo "$USER starting Benchmarking job for $MODEL"
 echo "Job started at $(date)"
 
 python src/run_eval.py \
   --config $MODEL \
-  --datasets "Missing_Flash"
+  --datasets "Missing"
 
 echo "Job completed at $(date)"
 

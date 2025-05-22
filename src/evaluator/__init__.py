@@ -1,18 +1,19 @@
-from .openai_model import OpenAIModel
-from .hf_model import HuggingFaceModel
-from .countgd_model import CountGDModel
-
 import os
 from openai import OpenAI
 
-def load_model(engine_name: str, **kwargs):
+from .base import Evaluator
+from .hf_model import HuggingFaceModel
+from .openai_model import OpenAIModel
+from .countgd_model import CountGDModel
+
+def load_evaluator(engine_name: str, **kwargs) -> Evaluator:
     """
     Load the specified model.
     Args:
         engine_name (str): The name of the model to load.
         **kwargs: Additional arguments to pass to the model constructor.
     Returns:
-        BaseModel: An instance of the specified model.
+        Evaluator: An instance of the specified model.
     Raises:
         ValueError: If the model name is not supported.
     """
@@ -27,7 +28,7 @@ def load_model(engine_name: str, **kwargs):
     }
     
     if engine_name not in model_map:
-        raise ValueError(f"Model '{engine_name}' is not supported. Available models: {list(model_map.keys())}.")
+        raise ValueError(f"Backend '{engine_name}' is not supported. Available backends: {', '.join(model_map.keys())}.")
     
     engine_params = {
         "openai": { 'client': OpenAI() },
@@ -51,6 +52,6 @@ def load_model(engine_name: str, **kwargs):
                 base_url='https://api.x.ai/v1'
             )
         },
-    }
+    }.get(engine_name, {})
     
-    return model_map[engine_name](**engine_params.get(engine_name, {}), **kwargs)
+    return model_map[engine_name](**engine_params, **kwargs)

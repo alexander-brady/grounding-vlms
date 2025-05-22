@@ -99,6 +99,6 @@ Additional params:
 
 ### huggingface
 
-Uses `pipeline` for `image-text-to-text` models. 
+Internally uses `pipeline` for `image-text-to-text` models. 
 
 Some models require `HUGGING_FACE_HUB_TOKEN` environment variable.
