@@ -1,9 +1,8 @@
-import yaml, json, time
-import argparse
+import yaml, json, time, argparse
 
 from pathlib import Path
 from dotenv import load_dotenv
-from models import load_model
+from evaluator import load_model
 
 
 def root() -> Path:
@@ -79,6 +78,7 @@ def main(args):
     if not any(output_dir.iterdir()):
         output_dir.rmdir()
         
+        
 def parse_args():
     '''Parse command line arguments.'''
     parser = argparse.ArgumentParser(description="Run evaluation on a model.")
@@ -96,7 +96,7 @@ def parse_args():
     parser.add_argument(
         "--datasets", 
         help="List of datasets to evaluate on (comma-separated)",
-        default="FSC-147, GeckoNum, PixMo_Count, TallyQA"
+        default="FSC-147, GeckoNum, TallyQA"
     )
     
     parser.add_argument("--output_dir", help="Directory to save the evaluation results")

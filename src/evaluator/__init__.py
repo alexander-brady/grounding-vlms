@@ -23,7 +23,6 @@ def load_evaluator(engine_name: str, **kwargs) -> Evaluator:
         "anthropic": OpenAIModel,
         "xai": OpenAIModel,
         "huggingface": HuggingFaceModel,
-        "countgd": CountGDModel,
         # Add other models here as needed
     }
     

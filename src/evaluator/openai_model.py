@@ -91,12 +91,10 @@ class OpenAIModel(Evaluator):
             in params.items() if key in openai_params
         }        
         
-        
     @staticmethod
     def max_batch_size(items: list) -> int:
         # Limit is 50000 or 209715200b
         return min(45000, len(items))
-    
     
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         super().eval(
@@ -107,7 +105,6 @@ class OpenAIModel(Evaluator):
             force_download=self.force_download
         )
     
-
     def eval_single(self, prompts: list) -> str:
         """
         Return the model's response to the prompt and image. 
@@ -148,7 +145,6 @@ class OpenAIModel(Evaluator):
             return 'ERROR: Output count is None'
         
         return response.parsed.count
-
 
     def eval_batch(self, batch: list) -> list:
         '''To work with rate limits, we slow down the batch sending.'''
