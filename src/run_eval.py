@@ -25,6 +25,9 @@ def build_config(args: argparse.Namespace) -> dict:
         with open(path, "r") as f:
             config = yaml.safe_load(f)
             
+        assert "engine" in config, "Config file must contain 'engine' key."
+        assert "model" in config, "Config file must contain 'model' key."
+            
     else:
         config = {
             "engine": args.engine,
@@ -56,7 +59,6 @@ def main(args):
     
     output_dir = Path(args.output_dir)
     
-    # if user passed an absolute path, use it directly; otherwise prepend project root
     if not output_dir.is_absolute():
         output_dir = root() / output_dir
     
@@ -88,7 +90,7 @@ def parse_args():
     parser.add_argument("--engine", help="Backend of model to evaluate (only if config is not provided)")
     parser.add_argument("--model", help="Name of the model to evaluate (only if config is not provided)")
     
-    parser.add_argument("--system_prompt", help="System prompt to initialize the model")
+    parser.add_argument("--system_prompt", help="System prompt to control model behavior the model")
     
     parser.add_argument("--params", type=json.loads, help="Extra params as JSON string")
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size for evaluation. -1 for all at once')
@@ -102,13 +104,14 @@ def parse_args():
     parser.add_argument("--output_dir", help="Directory to save the evaluation results")
     
     args = parser.parse_args()
-    if args.config:
+    
+    if args.config and args.config.endswith(".yaml"):
         args.config = args.config.replace(".yaml", "")
     
     if not args.config:
-        missing = [ arg for arg in ["engine", "model"] if not getattr(args, arg)]
+        missing = [ arg for arg in ["engine", "model"] if not getattr(args, arg, None)]
         if missing:
-            parser.error(f"Missing required arguments: config or ({' + '.join(missing)})")
+            parser.error(f"Missing required arguments: --config or (--{' and --'.join(missing)})")
             
     if not args.output_dir:
         if args.config:

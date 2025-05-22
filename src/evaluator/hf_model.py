@@ -1,11 +1,12 @@
 from pathlib import Path
-from transformers import pipeline, AutoTokenizer
+from transformers import pipeline
 
 from .base import Evaluator
 
 class HuggingFaceModel(Evaluator):
     '''Evaluation for models from huggingface.co.'''  
-        
+    
+    
     def __init__(self, model: str, **params):
         """
         Args:
@@ -13,17 +14,11 @@ class HuggingFaceModel(Evaluator):
             **params: Additional arguments for the model (processor, system_prompt, max_tokens, etc.)
         """
         super().__init__(params.pop("system_prompt", None))
-        
-        # Initialize tokenizer with left padding
-        tokenizer = AutoTokenizer.from_pretrained(model)
-        tokenizer.padding_side = 'left'
-        
         self.model = pipeline(
             "image-text-to-text",
             model=model,
             device_map="auto",
-            torch_dtype="auto",
-            tokenizer=tokenizer
+            torch_dtype="auto"
         )
         
         self.params = params

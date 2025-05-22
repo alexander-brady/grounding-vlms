@@ -420,6 +420,6 @@ def create_results(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
     print("Summary saved to", out / 'summary.csv')
     plot_rolling_accuracy_all_models()
     plot_range_performance_all_models()
-    # plot_best_stacked_all_models()
-    # plot_best_models_per_bin_all_models()
+    plot_best_stacked_all_models()
+    plot_best_models_per_bin_all_models()
     print("Plots saved to", out / 'plots')
