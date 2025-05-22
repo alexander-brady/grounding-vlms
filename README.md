@@ -32,15 +32,28 @@ pip install -r requirements.txt
 To evaluate a model on the dataset, run:
 
 ```bash
-python src/run_eval.py
+python src/run_eval.py --config path/to/config
 ```
 
 The evaluations will be saved by default in `eval/results/` folder. They will be saved in a csv file with the following columns:
 - `index`: The index of the image in the dataset
 - `result`: The model's prediction, converted to an integer
-- `raw_output`: The raw output of the model, which may not be in integer format (e.g. "three", "approximately 32")
+- `raw_result`: The raw output of the model, which may not be in integer format (e.g. "three", "approximately 32")
 
 ## Using Config Files
+
+A config file is a YAML file that specifies the model and its parameters. It allows you to easily switch between different models and configurations without modifying the command line arguments.
+
+### Example Config File
+
+```yaml
+engine: openai
+model: gpt-4.1
+system_prompt: "You are a helpful assistant. Please count the number of objects in the image."
+params:
+  temperature: 0.7
+  top_k: 5
+```
 
 Place model config files in the `models/` directory. Each config must include:
 
@@ -51,7 +64,7 @@ Place model config files in the `models/` directory. Each config must include:
 Override any config values with `--params`.
 
 ```bash
-python src/run_eval.py --config path/to/config.yaml
+python src/run_eval.py --config path/to/config --params '{ "temperature": 0.8, "top_k": 1 }'
 ```
 
 ## Without Config Files
@@ -74,7 +87,7 @@ Use one of:
 **Optional**  
 - `--system_prompt`: Custom system prompt  
 - `--params`: Override parameters (JSON format), e.g. `'{ "temperature": 0.7, "top_k": 5 }'`  
-- `--batch_size`: Batch size for batch execution (default: no batch). Set to -1 to set the whole dataset as a batch.
+- `--batch_size`: Batch size for batch execution (default: 1). Set to -1 to use the maximum batch size supported by the backend.
 - `--output_dir`: Output directory (default: `eval/datasets/type/model`)  
 - `--datasets`: Comma-separated dataset folders (default: `FSC-147, GeckoNum, TallyQA`)
 

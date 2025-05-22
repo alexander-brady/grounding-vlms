@@ -147,7 +147,7 @@ class Evaluator:
                     f.write(f"{idx},-1,ERROR: Image url failed\n")
                 
                 if prompts and pad_batches:
-                    prompts += prompts[-1] * (batch_size - len(prompts))
+                    prompts += [prompts[-1]] * (batch_size - len(prompts))
                     
                 for idx, count in zip(indices, self.eval_batch(prompts)):
                     f.write(f"{idx},{intify(count)},{count}\n")

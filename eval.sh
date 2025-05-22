@@ -14,23 +14,15 @@
 
 # for 12 gemma -> gpu 32 cpu 64 batch 1 worked -> 16 with batchsize 4 didnt work -> 32g batch 4 tbd 32 cpu didnt work ->32 with fast mode batch 1
 
-# MODEL=${1:-"openai/gpt-4-1"}
-# MODEL=${1:-"openai/o4-mini"}
-
-
 # MODEL=${1:-"huggingface/Qwen2-5-VL-3B-Instruct"}
 # MODEL=${1:-"huggingface/Qwen2-5-VL-7B-Instruct"}
 # MODEL=${1:-"huggingface/Qwen2-5-VL-72B-Instruct"}
 
-# MODEL=${1:-"huggingface/gemma-3-4b-it"}
+MODEL=${1:-"huggingface/gemma-3-4b-it"}
 # MODEL=${1:-"huggingface/gemma-3-12b-it"}
 # MODEL=${1:-"huggingface/gemma-3-27b-it"}
 
 # MODEL=${1:-"huggingface/Llama-4-Scout-17B-16E-Instruct"}
-
-# MODEL=${1:-"google/gemini-2.5-flash-preview-04-17"}
-# MODEL=${1:-"google/gemini-2.5-pro-preview-05-06"}
-# MODEL=${1:-"xai/grok-2-vision"}
 
 echo "$USER starting Benchmarking job for $MODEL"
 echo "Job started at $(date)"
@@ -40,11 +32,11 @@ module load stack/2024-06 gcc/12.2.0 python/3.11.6 cuda/11.3.1 eth_proxy
 
 VENV_PATH="$SCRATCH/pmlr/$MODEL/.venv"
 
-# ## Delete the venv
-# if [ -d "$VENV_PATH" ]; then
-#   rm -rf "$VENV_PATH"
-#   echo "Cleared existing virtual environment at $VENV_PATH at $(date)"
-# fi
+# # Delete the venv
+if [ -d "$VENV_PATH" ]; then
+  rm -rf "$VENV_PATH"
+  echo "Cleared existing virtual environment at $VENV_PATH at $(date)"
+fi
 
 # Check if venv exists, create if not
 if [ ! -d "$VENV_PATH" ]; then
@@ -68,28 +60,8 @@ python src/run_eval.py \
   --config $MODEL \
   --datasets "TallyQA"
   # --datasets "GeckoNum"
+  #--datasets "FSC-147"
   # --datasets "FSC-147, TallyQA, GeckoNum"
-  # --datasets "GeckoNum"
-  # --datasets "TallyQA"
-  # --datasets "GeckoNum"
-  # --datasets "TallyQA"
-  # --datasets "Sample" 
-  # --datasets "GeckoNum"
-  # --datasets "TallyQA"
-  # --datasets "GeckoNum"
-  # --datasets "TallyQA"
-  # --datasets "Sample" 
-  #--datasets "FSC-147" \ 
-  #--datasets "PixMo_Count" \
-  #--datasets "GeckoNum" 
-  # --datasets "Missing"
-  # --datasets "Sample" \
-  # --datasets "FSC-147" \   
-  
-  # --batch_size 4
-  # --batch_size 1
-  # --datasets "FSC-147, TallyQA" \
-  # --batch_size -1 \
 
 echo "Job completed at $(date)"
 
