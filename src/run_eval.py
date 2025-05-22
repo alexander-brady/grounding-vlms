@@ -2,7 +2,7 @@ import yaml, json, time, argparse
 
 from pathlib import Path
 from dotenv import load_dotenv
-from evaluator import load_model
+from evaluator import load_evaluator
 
 
 def root() -> Path:
@@ -52,7 +52,7 @@ def main(args):
     engine = config.pop("engine")
     batch_size = config.pop("batch_size", 1)
     
-    model = load_model(engine, **config)
+    model = load_evaluator(engine, **config)
     
     output_dir = Path(args.output_dir)
     
