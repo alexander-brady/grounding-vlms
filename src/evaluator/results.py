@@ -273,7 +273,7 @@ def find_label_performance(df, n=10, model=None, dataset=None,
 
 
 def plot_range_performance(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=10):
-    """Plot bin‐wise accuracy and MAE (log scale) for all models."""
+    """Plot bin-wise accuracy and MAE (log scale) for all models."""
     data_dir, results_dir = Path(data_dir), Path(results_dir)
     out = ANALYSIS_DIR / 'plots'; out.mkdir(exist_ok=True, parents=True)
 
