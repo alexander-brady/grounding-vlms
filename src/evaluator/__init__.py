@@ -4,7 +4,7 @@ from openai import OpenAI
 from .base import Evaluator
 from .hf_model import HuggingFaceModel
 from .openai_model import OpenAIModel
-from .countgd_model import CountGDModel
+
 
 def load_evaluator(engine_name: str, **kwargs) -> Evaluator:
     """

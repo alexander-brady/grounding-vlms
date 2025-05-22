@@ -10,11 +10,12 @@ from .utils import intify
 
 class BaseDataset(Dataset):
     '''Turns prompts and images into a usable dataset. Defaults to HuggingFace Standard.'''
+    
     def __init__(
         self, 
         df: pd.DataFrame, 
         image_dir: Path = None, 
-        system_prompt: str = str,
+        system_prompt: str = None,
         prompt_col: str = "prompt", 
         image_url_col: str = "image_url",
         image_path_col: str = "file_name",
@@ -120,7 +121,8 @@ class Evaluator:
         batch_size: int = 1, 
         pad_batches: bool = False,
         Container: BaseDataset = BaseDataset, 
-        **container_kwargs):
+        **container_kwargs
+    ):
         """
         Evaluate the model with a DataFrame of prompts and images, saving the results to a CSV file.
         
