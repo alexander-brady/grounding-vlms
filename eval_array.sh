@@ -15,12 +15,12 @@
 # for 12 gemma -> gpu 32 cpu 64 batch 1 worked -> 16 with batchsize 4 didnt work -> 32g batch 4 tbd 32 cpu didnt work ->32 with fast mode batch 1
 
 models=(
-  "huggingface/gemma-3-4b-it"
-  "huggingface/gemma-3-12b-it"
-  "huggingface/gemma-3-27b-it"
-  "huggingface/Qwen2-5-VL-3B-Instruct"
-  "huggingface/Qwen2-5-VL-7B-Instruct"
-  "huggingface/Qwen2-5-VL-72B-Instruct"
+  "huggingface/gemma-3-4b-it" # 0
+  "huggingface/gemma-3-12b-it" # 1
+  "huggingface/gemma-3-27b-it" # 2
+  "huggingface/Qwen2-5-VL-3B-Instruct" # 3
+  "huggingface/Qwen2-5-VL-7B-Instruct" # 4
+  "huggingface/Qwen2-5-VL-72B-Instruct" # 5
 )
 MODEL=${models[$SLURM_ARRAY_TASK_ID]}
 

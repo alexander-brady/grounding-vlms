@@ -18,9 +18,9 @@
 # MODEL=${1:-"huggingface/Qwen2-5-VL-7B-Instruct"}
 # MODEL=${1:-"huggingface/Qwen2-5-VL-72B-Instruct"}
 
-MODEL=${1:-"huggingface/gemma-3-4b-it"}
+# MODEL=${1:-"huggingface/gemma-3-4b-it"}
 # MODEL=${1:-"huggingface/gemma-3-12b-it"}
-# MODEL=${1:-"huggingface/gemma-3-27b-it"}
+MODEL=${1:-"huggingface/gemma-3-27b-it"}
 
 # MODEL=${1:-"huggingface/Llama-4-Scout-17B-16E-Instruct"}
 
@@ -58,7 +58,8 @@ echo "Beginning evaluation for $MODEL at $(date)"
 
 python src/run_eval.py \
   --config $MODEL \
-  --datasets "TallyQA"
+  --datasets "GeckoNum"
+  # --datasets "TallyQA"
   # --datasets "GeckoNum"
   #--datasets "FSC-147"
   # --datasets "FSC-147, TallyQA, GeckoNum"

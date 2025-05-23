@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+from matplotlib.lines import Line2D
 
 warnings.filterwarnings('ignore')
 
@@ -128,8 +129,8 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
                     if rd_df.empty:
                         print(f"Warning: Empty results for {model_dir.name} on {dataset_name}")
                         continue
-                        
-                    rd_df['model'] = model_dir.stem
+                    
+                    rd_df['model'] = model_dir.name
                     rd_df = rd_df.astype({
                         'idx': int,
                         'result': int,
@@ -144,7 +145,7 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
                     
                     model_results.append(rd_df)
                     dataset_models_processed += 1
-                    model_counts[model_dir.stem] = model_counts.get(model_dir.stem, 0) + 1
+                    model_counts[model_dir.name] = model_counts.get(model_dir.name, 0) + 1
                     
                 except Exception as e:
                     print(f"Error processing {model_dir.name} for {dataset_name}: {str(e)}")
@@ -614,9 +615,10 @@ def plot_model_accuracies_by_bin(csv_path, bin_width, value_range, log_scale=Fal
     tick_indices = np.arange(0, len(bin_centers), 5)
     ax.set_xticks([bin_centers[i] for i in tick_indices if i < len(bin_centers)])
     # Format labels to show inclusive bounds [lower, upper]
-    ax.set_xticklabels([f"[{interval.left:.0f},{(interval.right-1):.0f}]" 
-                        for interval in [pivot_mean.index[i] for i in tick_indices if i < len(bin_centers)]],
-                        rotation=45, ha='right')
+    ax.set_xticklabels([
+        f"[{interval.left:.0f},{interval.right:.0f}]" if i == 0 else f"({interval.left:.0f},{interval.right:.0f}]"
+        for i, interval in enumerate([pivot_mean.index[i] for i in tick_indices if i < len(bin_centers)])
+    ], rotation=45, ha='right')
 
     plt.tight_layout()
     plt.savefig(output_path)
@@ -818,6 +820,296 @@ def plot_label_performance(csv_path, minData=5, maxTruth=20):
     plt.close()
     print(f"Performance table saved to: {table_output_path}")
 
+def plot_accOverUnder(csv_path, bin_width, value_range, log_scale=False, minData=3, output_path='accuracy_plot.pdf'):
+    # Unpack the value_range tuple into min_value and max_value
+    min_value, max_value = value_range
+    
+    # Load data
+    df = pd.read_csv(csv_path)
+
+    # Ensure numeric types for comparison
+    df['truth'] = pd.to_numeric(df['truth'], errors='coerce')
+    df['model_result'] = pd.to_numeric(df['model_result'], errors='coerce')
+
+    # Filter out rows with NaNs in numeric columns
+    df = df.dropna(subset=['truth', 'model_result'])
+
+    # Filter rows based on the specified value range
+    df = df[(df['truth'] >= min_value) & (df['truth'] <= max_value)]
+
+    # Create bin edges based on the range
+    bins = np.arange(min_value, max_value + bin_width, bin_width)
+    df['bin'] = pd.cut(df['truth'], bins=bins, include_lowest=True)
+
+    # Determine model accuracies, underprediction, and overprediction in each bin
+    df['correct'] = df['truth'] == df['model_result']
+    df['underprediction'] = df['model_result'] < df['truth']
+    df['overprediction'] = df['model_result'] > df['truth']
+    
+    # Fix: Use a proper way to get both mean and count from 'correct'
+    grouped = df.groupby(['model', 'bin'], observed=False).agg({
+        'correct': ['mean', 'count'],  # Get both mean and count from correct
+        'underprediction': 'mean', 
+        'overprediction': 'mean'
+    }).reset_index()
+    
+    # Fix: Flatten the multi-level column index
+    grouped.columns = [
+        '_'.join(col).rstrip('_') if isinstance(col, tuple) else col 
+        for col in grouped.columns.values
+    ]
+    
+    # Pivot the data to plot by model
+    pivot_mean = grouped.pivot(index='bin', columns='model', values='correct_mean')
+    pivot_under = grouped.pivot(index='bin', columns='model', values='underprediction_mean')
+    pivot_over = grouped.pivot(index='bin', columns='model', values='overprediction_mean')
+    pivot_count = grouped.pivot(index='bin', columns='model', values='correct_count')
+
+    # Calculate bin centers for plotting
+    bin_centers = [(interval.left + interval.right) / 2 for interval in pivot_mean.index]
+    # Plotting
+    fig, ax = plt.subplots(figsize=(12, 7))
+    # Fix deprecated get_cmap warning
+    cmap = plt.colormaps['tab10']
+    
+    # Lists for legend handles and labels
+    model_handles = []
+    model_labels = []
+
+    for i, model in enumerate(pivot_mean.columns):
+        color = cmap(i % cmap.N)
+        
+        # Copy the data and set NaN for bins with insufficient data
+        plot_data = pivot_mean[model].copy()
+        plot_under = pivot_under[model].copy()
+        plot_over = pivot_over[model].copy()
+        mask = pivot_count[model] < minData
+        plot_data[mask] = np.nan
+        plot_under[mask] = np.nan
+        plot_over[mask] = np.nan
+        
+        # Plot accuracy (solid line)
+        acc_line = ax.plot(bin_centers, plot_data,
+                label=model,
+                marker='o',
+                markersize=2,
+                linewidth=1,
+                color=color)[0]
+                
+        # Plot underprediction (dotted line)
+        ax.plot(bin_centers, plot_under,
+                linestyle=':',
+                linewidth=1,
+                color=color)
+                
+        # Plot overprediction (dashed line)
+        ax.plot(bin_centers, plot_over,
+                linestyle='--',
+                linewidth=1,
+                color=color)
+        
+        # Add to legend collections
+        model_handles.append(acc_line)
+        model_labels.append(model)
+    
+    # Calculate average metrics across all models
+    avg_accuracy = pivot_mean.mean(axis=1)
+    avg_under = pivot_under.mean(axis=1)
+    avg_over = pivot_over.mean(axis=1)
+    
+    # Plot average accuracy (solid black line)
+    avg_acc_line = ax.plot(bin_centers, avg_accuracy,
+                    label='Average Accuracy',
+                    linestyle='-',
+                    linewidth=2,
+                    color='black')[0]
+                    
+    # Plot average underprediction (dotted black line)
+    avg_under_line = ax.plot(bin_centers, avg_under,
+                    linestyle=':',
+                    linewidth=2,
+                    color='black')[0]
+            
+    # Plot average overprediction (dashed black line)
+    avg_over_line = ax.plot(bin_centers, avg_over,
+                    linestyle='--',
+                    linewidth=2,
+                    color='black')[0]
+
+    # Create a separate legend for line styles
+    from matplotlib.lines import Line2D
+    
+    line_style_handles = [
+        Line2D([0], [0], color='gray', lw=2, label='Accuracy (solid)'),
+        Line2D([0], [0], color='gray', lw=2, linestyle=':', label='Underprediction (dotted)'),
+        Line2D([0], [0], color='gray', lw=2, linestyle='--', label='Overprediction (dashed)')
+    ]
+    
+    # Add average line to model handles and labels
+    model_handles.append(avg_acc_line)
+    model_labels.append('Average')
+    
+    # Add main legend for models
+    first_legend = ax.legend(model_handles, model_labels, loc='upper right', title="Models")
+    
+    # Add the second legend for line styles
+    ax.add_artist(first_legend)
+    ax.legend(handles=line_style_handles, loc='upper left', title="Metrics")
+
+    ax.set_xlabel('Truth Value Bins')
+    ax.set_ylabel('Rate')
+    ax.set_title(f'Model Performance by Truth Value Bin ({min_value}-{max_value}), Bin Width: {bin_width}')
+    ax.grid(True)
+    ax.set_ylim(0, 1.05)  # Set y-axis range from 0 to just above 1
+
+    if log_scale:
+        ax.set_yscale('log')
+
+    # Adjust x-axis ticks and labels (every 5th bin)
+    tick_indices = np.arange(0, len(bin_centers), 5)
+    ax.set_xticks([bin_centers[i] for i in tick_indices if i < len(bin_centers)])
+    # Format labels to show inclusive bounds [lower, upper]
+    ax.set_xticklabels([f"[{interval.left:.0f},{(interval.right-1):.0f}]" 
+                        for interval in [pivot_mean.index[i] for i in tick_indices if i < len(bin_centers)]],
+                        rotation=45, ha='right')
+
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+
+def plot_prediction_trends_by_tolerance(csv_path, bin_width, value_range, tolerances=[0, 1, 2], 
+                                        log_scale=False, minData=5, output_path='prediction_trends.pdf'):
+    # Unpack the value_range tuple into min_value and max_value
+    min_value, max_value = value_range
+    
+    # Load data
+    df = pd.read_csv(csv_path)
+
+    # Ensure numeric types for comparison
+    df['truth'] = pd.to_numeric(df['truth'], errors='coerce')
+    df['model_result'] = pd.to_numeric(df['model_result'], errors='coerce')
+
+    # Filter out rows with NaNs in numeric columns
+    df = df.dropna(subset=['truth', 'model_result'])
+
+    # Filter rows based on the specified value range
+    df = df[(df['truth'] >= min_value) & (df['truth'] <= max_value)]
+
+    # Create bin edges based on the range
+    bins = np.arange(min_value, max_value + bin_width, bin_width)
+    df['bin'] = pd.cut(df['truth'], bins=bins, include_lowest=True)
+    
+    # Calculate bin centers for plotting
+    bin_indices = sorted(df['bin'].unique())
+    bin_centers = [(interval.left + interval.right) / 2 for interval in bin_indices]
+    
+    # Plotting
+    fig, ax = plt.subplots(figsize=(12, 7))
+    
+    # Color map for different tolerances - using colorblind-friendly colors
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f']
+    
+    # Line styles for different prediction types
+    line_styles = {
+        'accurate': '-',    # solid line for accurate predictions
+        'over': ':',        # dotted line for over-predictions
+        'under': '--'       # dashed line for under-predictions
+    }
+    
+    # Create empty lists for legend entries
+    dummy_tolerance_lines = []
+    
+    # Process each tolerance
+    for t_idx, tolerance in enumerate(tolerances):
+        # Use modulo to cycle through colors if we have more tolerances than colors
+        color = colors[t_idx % len(colors)]
+        
+        # Calculate predictions for current tolerance
+        df['accurate'] = (abs(df['truth'] - df['model_result']) <= tolerance)
+        df['over'] = (df['model_result'] > df['truth'] + tolerance)
+        df['under'] = (df['model_result'] < df['truth'] - tolerance)
+        
+        # For each prediction type
+        for pred_type, line_style in line_styles.items():
+            # Group by bin and calculate mean across all models
+            grouped = df.groupby('bin', observed=False)[pred_type].agg(['mean', 'count']).reset_index()
+            
+            # Convert to a dictionary for easier filtering by bin
+            bin_data = {bin_val: {'mean': mean, 'count': count} 
+                      for bin_val, mean, count in zip(grouped['bin'], grouped['mean'], grouped['count'])}
+            
+            # Create arrays for plotting, filtering by minData
+            y_values = []
+            valid_bin_centers = []
+            
+            for i, bin_center in enumerate(bin_centers):
+                if i < len(bin_indices) and bin_indices[i] in bin_data:
+                    bin_val = bin_indices[i]
+                    if bin_data[bin_val]['count'] >= minData:
+                        y_values.append(bin_data[bin_val]['mean'])
+                        valid_bin_centers.append(bin_center)
+            
+            # Plot this line if we have data
+            if valid_bin_centers:
+                ax.plot(valid_bin_centers, y_values, 
+                        linestyle=line_style, 
+                        linewidth=2.5 if pred_type == 'accurate' else 1.5,
+                        color=color,
+                        marker='o' if pred_type == 'accurate' else None,
+                        markersize=3)
+        
+        # Create a dummy line for this tolerance level (for the legend)
+        dummy_line = plt.plot([], [], color=color, linestyle='-', label=f"Tolerance = ±{tolerance}")[0]
+        dummy_tolerance_lines.append(dummy_line)
+    
+    # Add legend for line styles
+    from matplotlib.lines import Line2D
+    style_legend = [
+        Line2D([0], [0], color='black', linestyle='-', label='Accurate'),
+        Line2D([0], [0], color='black', linestyle=':', label='Over-prediction'),
+        Line2D([0], [0], color='black', linestyle='--', label='Under-prediction')
+    ]
+    
+    # Create tolerance legend
+    tolerance_legend = ax.legend(handles=dummy_tolerance_lines,
+                             loc='upper left', title='Tolerance Levels')
+    
+    # Add the tolerance legend to the plot
+    ax.add_artist(tolerance_legend)
+    
+    # Add the prediction type legend in a different location
+    ax.legend(handles=style_legend, loc='upper right', title='Prediction Type')
+    
+    # Set axis labels and title
+    ax.set_xlabel('Ground Truth Value', fontsize=12)
+    ax.set_ylabel('Proportion of Predictions', fontsize=12)
+    ax.set_title(f'Prediction Trends by Ground Truth Value ({min_value}-{max_value}), Bin Width: {bin_width}', 
+                fontsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(0, 1.05)
+    
+    if log_scale:
+        ax.set_yscale('log')
+
+    # Adjust x-axis ticks and labels (every 5th bin)
+    tick_indices = np.arange(0, len(bin_centers), 5)
+    ax.set_xticks([bin_centers[i] for i in tick_indices if i < len(bin_centers)])
+    # Format labels to show inclusive bounds [lower, upper]
+    ax.set_xticklabels([f"[{interval.left:.0f},{(interval.right-1):.0f}]" 
+                      for interval in [bin_indices[i] for i in tick_indices if i < len(bin_indices)]],
+                      rotation=45, ha='right')
+
+    plt.tight_layout()
+    
+    # Create plots directory if it doesn't exist
+    output_path = Path(output_path)
+    output_path.parent.mkdir(exist_ok=True, parents=True)
+    
+    # Save the plot
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    return output_path
+
 # backward-compatible wrappers
 def plot_best_models_per_bin_all_models(**kwargs):
     return plot_best_models_per_bin(**kwargs)
@@ -852,6 +1144,22 @@ def create_results(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
         csv_path=RESULTS_DIR / 'combinedResults.csv',
         minData=5,
         maxTruth=20
+    )
+    plot_accOverUnder(
+        csv_path=RESULTS_DIR / 'combinedResults.csv',
+        bin_width=10,
+        value_range=(0, 500),
+        log_scale=False,
+        minData=3,
+        output_path=ANALYSIS_DIR / 'plots' / 'accOverUnderPlot.pdf'
+    )
+    plot_prediction_trends_by_tolerance(
+        csv_path=RESULTS_DIR / 'combinedResults.csv',
+        bin_width=2,
+        value_range=(0, 100),
+        tolerances=[0, 1, 2, 5],
+        minData=5,
+        output_path=ANALYSIS_DIR / 'plots' / 'prediction_trends.pdf'
     )
 
     # clear old reports

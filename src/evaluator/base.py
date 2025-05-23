@@ -146,11 +146,14 @@ class Evaluator:
                 for idx in failed:
                     f.write(f"{idx},-1,ERROR: Image url failed\n")
                 
-                if prompts and pad_batches:
-                    prompts += [prompts[-1]] * (batch_size - len(prompts))
+                if prompts:
+                    if pad_batches:
+                        prompts += [prompts[-1]] * (batch_size - len(prompts))
                     
-                for idx, count in zip(indices, self.eval_batch(prompts)):
-                    f.write(f"{idx},{intify(count)},{count}\n")
+                    for idx, count in zip(indices, self.eval_batch(prompts)):
+                        f.write(f"{idx},{intify(count)},{count}\n")
+                    
+        print('Successfully evaluated dataset. Results saved to', result_file)
                                 
                     
     def eval_single(self, prompt: list) -> str:

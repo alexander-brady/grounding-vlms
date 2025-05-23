@@ -7,4 +7,4 @@ system_prompt: >-
 max_new_tokens: 20
 use_fast: true
 # do_sample: false
-batch_size: 4
+batch_size: 8
