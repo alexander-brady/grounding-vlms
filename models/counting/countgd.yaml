@@ -1,4 +1,0 @@
-engine: countgd
-model: nikigoli/CountGD 
-batch_size: 16 
-#check countgd.md for more information on how to implement it
