@@ -1,5 +1,5 @@
-# Grounding capabilities of Vision-Language models
-Investigate the visual grounding capabilities of state-of-the-art vision–language models (VLMs) using multimodal reasoning benchmarks with data visualizations.
+# Can't Count on Vision-Language Models
+Vision Language Models can't count very well. We evaluated a bunch of VLMs to prove it. This repo contains an evaluation backend to easily run and benchmark vision language models on counting tasks.
 
 # Table of Contents
 - [Setup](#setup)
