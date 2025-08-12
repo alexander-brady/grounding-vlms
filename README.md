@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 # Run Evaluations
 
-> Example: `eval.sh` contains a sample command.
+> Example: `eval.sh` contains a sample SLURM command.
 
 To evaluate a model on the dataset, run:
 
@@ -35,7 +35,7 @@ To evaluate a model on the dataset, run:
 python -m src.evaluator model=openai/gpt-4.1
 ```
 
-The evaluations will be saved by default in `eval/results/` folder. They will be saved in a csv file with the following columns:
+The evaluations will be saved by default in `output` folder (Hydra's working directory). They will be saved in a csv file with the following columns:
 - `index`: The index of the image in the dataset
 - `result`: The model's prediction, converted to an integer
 - `raw_result`: The raw output of the model, which may not be in integer format (e.g. "three", "approximately 32")
