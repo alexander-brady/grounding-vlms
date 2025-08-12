@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=eval_hf
+#SBATCH --job-name=eval
 #SBATCH --output=logs/%u/%x_%j.out
 #SBATCH --error=logs/%u/%x_%j.err
 #SBATCH --ntasks=1
@@ -11,7 +11,7 @@
 #SBATCH --mail-type=END,FAIL
 #SBATCH --gres=gpumem:64g
 
-# MODEL=${1:-"huggingface/Llama-4-Scout-17B-16E-Instruct"}
+MODEL=${1:-"huggingface/Llama-4-Scout-17B-16E-Instruct"}
 
 echo "$USER starting Benchmarking job for $MODEL"
 echo "Job started at $(date)"
@@ -34,18 +34,11 @@ source "$VENV_PATH/bin/activate"
 pip install --upgrade pip --quiet
 pip install -r requirements.txt --quiet
 
-# Model paths
 export HF_HOME="$SCRATCH/pmlr/$MODEL/cache"
 
 echo "Beginning evaluation for $MODEL at $(date)"
 
-python src/run_eval.py \
-  --config $MODEL \
-  --datasets "GeckoNum"
-  # --datasets "TallyQA"
-  # --datasets "GeckoNum"
-  #--datasets "FSC-147"
-  # --datasets "FSC-147, TallyQA, GeckoNum"
+python src/run_eval.py model=$MODEL
 
 echo "Job completed at $(date)"
 

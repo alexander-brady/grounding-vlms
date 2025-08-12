@@ -1,0 +1,13 @@
+defaults:
+- _self_
+- model: huggingface/gemma-3-4b-it
+
+datasets:
+- FSC-147
+- GeckoNum
+- TallyQA
+
+
+hydra:
+   job:
+      chdir: true

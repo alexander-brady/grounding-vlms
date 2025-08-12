@@ -4,7 +4,9 @@ model: google/gemma-3-27b-it           # HF repo ID for instruction‐tuned 27 B
 #system_prompt: "You are a helpful assistant."
 system_prompt: >-
   You are a vision-language evaluator. When given an image and a question asking you to count items—phrases may vary (“How many”, “Count the number of”, “Number of”, etc.)—respond with the integer count only, with no additional words or punctuation.
-max_new_tokens: 20
-use_fast: true
-# do_sample: false
+
+params:
+  max_new_tokens: 20
+  use_fast: true
+  # do_sample: false
 batch_size: 8

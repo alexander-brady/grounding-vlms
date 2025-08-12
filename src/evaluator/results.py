@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from matplotlib.lines import Line2D
 
 warnings.filterwarnings('ignore')
 
@@ -13,7 +12,7 @@ warnings.filterwarnings('ignore')
 BASE_DIR       = Path(__file__).resolve().parent.parent.parent
 EVAL_DIR       = BASE_DIR / 'eval'
 ANALYSIS_DIR   = EVAL_DIR / 'analysis'
-DATA_DIR       = EVAL_DIR / 'data'
+DATA_DIR       = EVAL_DIR / 'datasets'
 RESULTS_DIR    = EVAL_DIR / 'valid_results'
 
 # Ensure analysis folder exists
@@ -44,9 +43,9 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
     datasets_skipped = 0
     models_processed = 0
 
-    for data_path in DATA_DIR.glob('*_dataset.csv'):
+    for data_path in data_dir.glob("*/dataset*.csv"):
         try:
-            dataset_name = data_path.stem.replace('_dataset', '')
+            dataset_name = data_path.parent.name
             print(f"Processing dataset: {dataset_name}")
             
             # Load dataset with error handling
@@ -113,7 +112,7 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
             model_results = []
             dataset_models_processed = 0
             
-            for model_dir in sorted(RESULTS_DIR.iterdir()):
+            for model_dir in sorted(results_dir.iterdir()):
                 if not model_dir.is_dir():
                     continue
                     
@@ -210,9 +209,6 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
             print(f"  - {model}: {count} datasets")
     else:
         print("Error: No data was processed successfully. No output file created.")
-
-
-
 
 def summarize_counts(df):
     """Compute error metrics on a merged DataFrame."""

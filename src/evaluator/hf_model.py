@@ -1,27 +1,28 @@
 from pathlib import Path
 from transformers import pipeline
+from omegaconf import DictConfig
 
 from .base import Evaluator
+from .utils import cfg_to_dict
 
 class HuggingFaceModel(Evaluator):
     '''Evaluation for models from huggingface.co.'''  
-    
-    
-    def __init__(self, model: str, **params):
+
+
+    def __init__(self, model_cfg: DictConfig):
         """
         Args:
-            model (str): The 'image-text-to-text' model to use (e.g. "qwen/qwen2-vl-7b-instruct").
-            **params: Additional arguments for the model (processor, system_prompt, max_tokens, etc.)
+            model_cfg (DictConfig): The configuration for the model.
         """
-        super().__init__(params.pop("system_prompt", None))
+        super().__init__(model_cfg.get("system_prompt", None))
         self.model = pipeline(
             "image-text-to-text",
-            model=model,
+            model=model_cfg.model,
             device_map="auto",
             torch_dtype="auto"
         )
         
-        self.params = params
+        self.params = cfg_to_dict(model_cfg.get("params", {}))
         
         
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):

@@ -4,7 +4,7 @@ Vision Language Models can't count very well. We evaluated a bunch of VLMs to pr
 # Table of Contents
 - [Setup](#setup)
 - [Run Evaluations](#run-evaluations)
-  - [Using Config Files](#using-config-files)
+  - [Config Management](#using-config-files)
   - [Without Config Files](#without-config-files)
   - [Parameters](#parameters)
   - [Supported Backends](#supported-backends)
@@ -32,7 +32,7 @@ pip install -r requirements.txt
 To evaluate a model on the dataset, run:
 
 ```bash
-python src/run_eval.py --config path/to/config
+python src/run_eval.py model=openai/gpt-4.1
 ```
 
 The evaluations will be saved by default in `eval/results/` folder. They will be saved in a csv file with the following columns:
@@ -40,11 +40,11 @@ The evaluations will be saved by default in `eval/results/` folder. They will be
 - `result`: The model's prediction, converted to an integer
 - `raw_result`: The raw output of the model, which may not be in integer format (e.g. "three", "approximately 32")
 
-## Using Config Files
+## Config Management
 
-A config file is a YAML file that specifies the model and its parameters. It allows you to easily switch between different models and configurations without modifying the command line arguments.
+This repo uses [Hydra](https://hydra.cc/) for configuration management. Models are specified using config files. Such files specify the model and its parameters. It allows you to easily switch between different models and configurations without modifying the command line arguments.
 
-### Example Config File
+**Example Config File**
 
 ```yaml
 engine: openai
@@ -64,32 +64,29 @@ Place model config files in the `models/` directory. Each config must include:
 Override any config values with `--params`.
 
 ```bash
-python src/run_eval.py --config path/to/config --params '{ "temperature": 0.8, "top_k": 1 }'
+python src/run_eval.py model=path/to/config model.params.temperature=0.8 model.params.top_k=1
 ```
 
 ## Without Config Files
 
-You can run without a config by specifying `--engine` and `--model` directly:
+You can run without a config by specifying `+model.engine` and `+model.name` directly:
 
 ```bash
-python src/run_eval.py --engine openai --model gpt-4.1
+python src/run_eval.py +model.engine openai +model.name gpt-4.1
 ```
 
-## Parameters
+## Model Parameters
 
 **Required**  
-Use one of:  
-- `--config`: Path to model config file  
-**or**  
 - `--engine`: Backend type (e.g. openai)
 - `--model`: Model name (e.g. gpt-4.1)
 
 **Optional**  
-- `--system_prompt`: Custom system prompt  
-- `--params`: Override parameters (JSON format), e.g. `'{ "temperature": 0.7, "top_k": 5 }'`  
-- `--batch_size`: Batch size for batch execution (default: 1). Set to -1 to use the maximum batch size supported by the backend.
-- `--output_dir`: Output directory (default: `eval/datasets/type/model`)  
-- `--datasets`: Comma-separated dataset folders (default: `FSC-147, GeckoNum, TallyQA`)
+- `system_prompt`: Custom system prompt  
+- `params`: Override parameters, e.g. `model.params.temperature=0.7 model.params.top_k=5`
+- `batch_size`: Batch size for batch execution (default: 1). Set to -1 to use the maximum batch size supported by the backend.
+- `output_dir`: Output directory (default: hydra output directory)
+- `datasets`: Comma-separated dataset folders (default: `FSC-147, GeckoNum, TallyQA`)
 
 
 ## Supported Backends

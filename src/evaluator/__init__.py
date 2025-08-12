@@ -1,17 +1,17 @@
 import os
 from openai import OpenAI
+from omegaconf import DictConfig
 
 from .base import Evaluator
 from .hf_model import HuggingFaceModel
 from .openai_model import OpenAIModel
 
 
-def load_evaluator(engine_name: str, **kwargs) -> Evaluator:
+def load_evaluator(model_cfg: DictConfig) -> Evaluator:
     """
     Load the specified model.
     Args:
-        engine_name (str): The name of the model to load.
-        **kwargs: Additional arguments to pass to the model constructor.
+        model_cfg (DictConfig): The configuration for the model.
     Returns:
         Evaluator: An instance of the specified model.
     Raises:
@@ -26,9 +26,9 @@ def load_evaluator(engine_name: str, **kwargs) -> Evaluator:
         # Add other models here as needed
     }
     
-    if engine_name not in model_map:
-        raise ValueError(f"Backend '{engine_name}' is not supported. Available backends: {', '.join(model_map.keys())}.")
-    
+    if model_cfg.engine not in model_map:
+        raise ValueError(f"Backend '{model_cfg.engine}' is not supported. Available backends: {', '.join(model_map.keys())}.")
+
     engine_params = {
         "openai": { 'client': OpenAI() },
         "google": {
@@ -51,6 +51,6 @@ def load_evaluator(engine_name: str, **kwargs) -> Evaluator:
                 base_url='https://api.x.ai/v1'
             )
         },
-    }.get(engine_name, {})
-    
-    return model_map[engine_name](**engine_params, **kwargs)
+    }.get(model_cfg.engine, {})
+
+    return model_map[model_cfg.engine](**engine_params, model_cfg=model_cfg)

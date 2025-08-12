@@ -1,8 +1,10 @@
 import base64, time, requests
 from pathlib import Path
 from pydantic import BaseModel
+from omegaconf import DictConfig
 
 from .base import Evaluator, BaseDataset
+from .utils import cfg_to_dict
 
 
 class ObjectCount(BaseModel):
@@ -60,11 +62,10 @@ class OpenAIModel(Evaluator):
     '''Evaluation for models using OpenAI-style APIs.'''
     
     def __init__(self, 
-        model: str, 
         client: object,
+        model_cfg: DictConfig,
         force_download: bool = False, 
         structured_output: bool = True,
-        **params
     ):
         """
         Args:
@@ -74,7 +75,7 @@ class OpenAIModel(Evaluator):
             structured_output (bool): Whether to use structured output to constrain the output to integers.
             **params: Additional arguments for the model (temperature, max_completion_tokens, etc.)
         """
-        super().__init__(params.pop("system_prompt", None))
+        super().__init__(model_cfg.get("system_prompt", None))
         self.client = client
         
         openai_params = {
@@ -85,7 +86,9 @@ class OpenAIModel(Evaluator):
         
         self.force_download = force_download
         self.structured_output = structured_output
-        self.model = model
+        self.model = model_cfg.model
+        
+        params = cfg_to_dict(model_cfg.get("params", {}))
         self.params = {
             key: value for key, value 
             in params.items() if key in openai_params

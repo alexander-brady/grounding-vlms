@@ -9,14 +9,14 @@ venv/
 __pycache__/
 
 # Log files
-logs/
+*.log
+*.err
+
+# Hydra Outputs
+outputs/
 
 # Dataset 
 images/
 results/
 valid_results/
 analysis/
-
-# Temporary files
-tmp/
-experiments/
