@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 import hydra
 from omegaconf import DictConfig
 
-from evaluator import load_evaluator
-from evaluator.results import create_results
+from . import load_evaluator
+from .results import create_results
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="config.yaml")

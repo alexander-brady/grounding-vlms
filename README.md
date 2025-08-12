@@ -32,7 +32,7 @@ pip install -r requirements.txt
 To evaluate a model on the dataset, run:
 
 ```bash
-python src/run_eval.py model=openai/gpt-4.1
+python -m src.evaluator model=openai/gpt-4.1
 ```
 
 The evaluations will be saved by default in `eval/results/` folder. They will be saved in a csv file with the following columns:
@@ -61,10 +61,10 @@ Place model config files in the `models/` directory. Each config must include:
 - `model`: Model name  
 - (Additional backend-specific parameters as needed)
 
-Override any config values with `--params`.
+Config values can be overridden via Hydra CLI.
 
 ```bash
-python src/run_eval.py model=path/to/config model.params.temperature=0.8 model.params.top_k=1
+python -m src.run_eval model=path/to/config model.params.temperature=0.8 model.params.top_k=1
 ```
 
 ## Without Config Files
@@ -72,7 +72,7 @@ python src/run_eval.py model=path/to/config model.params.temperature=0.8 model.p
 You can run without a config by specifying `+model.engine` and `+model.name` directly:
 
 ```bash
-python src/run_eval.py +model.engine openai +model.name gpt-4.1
+python -m src.run_eval +model.engine openai +model.name gpt-4.1
 ```
 
 ## Model Parameters

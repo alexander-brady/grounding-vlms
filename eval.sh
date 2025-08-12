@@ -38,7 +38,7 @@ export HF_HOME="$SCRATCH/pmlr/$MODEL/cache"
 
 echo "Beginning evaluation for $MODEL at $(date)"
 
-python src/run_eval.py model=$MODEL
+python -m src.evaluator model=$MODEL
 
 echo "Job completed at $(date)"
 
