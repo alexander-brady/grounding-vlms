@@ -1,6 +1,7 @@
 import os
-from openai import OpenAI
+
 from omegaconf import DictConfig
+from openai import OpenAI
 
 from .base import Evaluator
 from .hf_model import HuggingFaceModel
@@ -25,32 +26,25 @@ def load_evaluator(model_cfg: DictConfig) -> Evaluator:
         "huggingface": HuggingFaceModel,
         # Add other models here as needed
     }
-    
+
     if model_cfg.engine not in model_map:
-        raise ValueError(f"Backend '{model_cfg.engine}' is not supported. Available backends: {', '.join(model_map.keys())}.")
+        raise ValueError(
+            f"Backend '{model_cfg.engine}' is not supported. Available backends: {', '.join(model_map.keys())}."
+        )
 
     engine_params = {
-        "openai": { 'client': OpenAI() },
+        "openai": {"client": OpenAI()},
         "google": {
-            'client': OpenAI(
-                api_key=os.getenv("GEMINI_API_KEY"),
-                base_url='https://generativelanguage.googleapis.com/v1beta/openai/'
+            "client": OpenAI(
+                api_key=os.getenv("GEMINI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
             ),
-            'force_download': True
+            "force_download": True,
         },
         "anthropic": {
-            'client': OpenAI(
-                api_key=os.getenv("ANTHROPIC_API_KEY"),
-                base_url='https://api.anthropic.com/v1/'
-            ),
-            'structured_output': False
+            "client": OpenAI(api_key=os.getenv("ANTHROPIC_API_KEY"), base_url="https://api.anthropic.com/v1/"),
+            "structured_output": False,
         },
-        "xai": {
-            'client': OpenAI(
-                api_key=os.getenv("XAI_API_KEY"),
-                base_url='https://api.x.ai/v1'
-            )
-        },
+        "xai": {"client": OpenAI(api_key=os.getenv("XAI_API_KEY"), base_url="https://api.x.ai/v1")},
     }.get(model_cfg.engine, {})
 
     return model_map[model_cfg.engine](**engine_params, model_cfg=model_cfg)

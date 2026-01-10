@@ -1,20 +1,25 @@
-import base64, time, requests
+import base64
+import time
 from pathlib import Path
-from pydantic import BaseModel
-from omegaconf import DictConfig
 
-from .base import Evaluator, BaseDataset
+import requests
+from omegaconf import DictConfig
+from pydantic import BaseModel
+
+from .base import BaseDataset, Evaluator
 from .utils import cfg_to_dict
 
 
 class ObjectCount(BaseModel):
-    '''Model response format, constraining output to integers'''
+    """Model response format, constraining output to integers"""
+
     count: int
-    
-    
+
+
 class OpenAIDataset(BaseDataset):
-    '''Dataset for OpenAI specific prompts.'''
-    def __init__(self, df, force_download: bool=False, **kwargs):
+    """Dataset for OpenAI specific prompts."""
+
+    def __init__(self, df, force_download: bool = False, **kwargs):
         """
         Args:
             df (pd.DataFrame): The DataFrame containing the dataset.
@@ -23,26 +28,27 @@ class OpenAIDataset(BaseDataset):
         """
         super().__init__(df, **kwargs)
         self.force_download = force_download
-        
+
     def __getitem__(self, idx):
         return (
             self.indices[idx],
-            self.system + [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": self.prompts[idx]},
+            self.system
+            + [
                 {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": self.process_image(idx),
-                        "detail": "high"
-                    },
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": self.prompts[idx]},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": self.process_image(idx), "detail": "high"},
+                        },
+                    ],
                 }
             ],
-        }])
-    
+        )
+
     def process_image(self, idx):
-        '''Turn image into model readable format.'''
+        """Turn image into model readable format."""
         if self.using_image_urls and not self.force_download:
             return self.images[idx]
         elif self.using_image_urls:
@@ -56,15 +62,16 @@ class OpenAIDataset(BaseDataset):
             file_name = self.images[idx]
             with open(self.image_dir / file_name, "rb") as f:
                 return f"data:image/jpeg;base64,{base64.b64encode(f.read()).decode('utf-8')}"
-        
+
 
 class OpenAIModel(Evaluator):
-    '''Evaluation for models using OpenAI-style APIs.'''
-    
-    def __init__(self, 
+    """Evaluation for models using OpenAI-style APIs."""
+
+    def __init__(
+        self,
         client: object,
         model_cfg: DictConfig,
-        force_download: bool = False, 
+        force_download: bool = False,
         structured_output: bool = True,
     ):
         """
@@ -77,43 +84,37 @@ class OpenAIModel(Evaluator):
         """
         super().__init__(model_cfg.get("system_prompt", None))
         self.client = client
-        
+
         openai_params = {
-            "temperature", "frequency_penalty", 
-            "max_completion_tokens", "top_p",
-            "reasoning_effort", "seed", 
+            "temperature",
+            "frequency_penalty",
+            "max_completion_tokens",
+            "top_p",
+            "reasoning_effort",
+            "seed",
         }
-        
+
         self.force_download = force_download
         self.structured_output = structured_output
         self.model = model_cfg.model
-        
+
         params = cfg_to_dict(model_cfg.get("params", {}))
-        self.params = {
-            key: value for key, value 
-            in params.items() if key in openai_params
-        }        
-        
+        self.params = {key: value for key, value in params.items() if key in openai_params}
+
     @staticmethod
     def max_batch_size(items: list) -> int:
         # Limit is 50000 or 209715200b
         return min(45000, len(items))
-    
+
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
-        super().eval(
-            dataset_dir, 
-            result_file, 
-            batch_size,
-            Container=OpenAIDataset,
-            force_download=self.force_download
-        )
-    
+        super().eval(dataset_dir, result_file, batch_size, Container=OpenAIDataset, force_download=self.force_download)
+
     def eval_single(self, prompts: list) -> str:
         """
-        Return the model's response to the prompt and image. 
+        Return the model's response to the prompt and image.
         Args:
             prompts (list): The prompts to ask the model.
-            
+
         Returns:
             str: The model's response.
         """
@@ -121,39 +122,40 @@ class OpenAIModel(Evaluator):
             if not self.structured_output:
                 # If the model does not support structured output,
                 # we need to use the default response format.
-                return self.client.chat.completions.create(
-                    model=self.model,
-                    messages=prompts,
-                    **self.params
-                ).choices[0].message.content               
-                
+                return (
+                    self.client.chat.completions.create(model=self.model, messages=prompts, **self.params)
+                    .choices[0]
+                    .message.content
+                )
+
             # Else we use parsing to constrain the output to the expected format.
-            response = self.client.beta.chat.completions.parse(
-                model=self.model,
-                messages=prompts,
-                response_format=ObjectCount,
-                **self.params
-            ).choices[0].message
-            
+            response = (
+                self.client.beta.chat.completions.parse(
+                    model=self.model, messages=prompts, response_format=ObjectCount, **self.params
+                )
+                .choices[0]
+                .message
+            )
+
         except Exception as e:
-            return  'ERROR: ' + str(e)
-        
+            return "ERROR: " + str(e)
+
         if response.refusal:
-            return 'ERROR: (Refusal) ' + response.refusal
-        
+            return "ERROR: (Refusal) " + response.refusal
+
         elif response.parsed is None:
-            return 'ERROR: Output is None'
-        
+            return "ERROR: Output is None"
+
         elif response.parsed.count is None:
-            return 'ERROR: Output count is None'
-        
+            return "ERROR: Output count is None"
+
         return response.parsed.count
 
     def eval_batch(self, batch: list) -> list:
-        '''To work with rate limits, we slow down the batch sending.'''
+        """To work with rate limits, we slow down the batch sending."""
         curr_time = time.time()
         res = super().eval_batch(batch)
-        
+
         elapsed_time = time.time() - curr_time
         wait_time = max(0, 1 - elapsed_time)
         time.sleep(wait_time)
