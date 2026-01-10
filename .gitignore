@@ -8,6 +8,15 @@ venv/
 # Python cache files
 __pycache__/
 
+# Byte-compiled files
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Cache folders
+.*_cache
+
 # Log files
 *.log
 *.err
