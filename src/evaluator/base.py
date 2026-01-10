@@ -15,8 +15,8 @@ class BaseDataset(Dataset):
     def __init__(
         self,
         df: pd.DataFrame,
-        image_dir: Path = None,
-        system_prompt: str = None,
+        image_dir: Path | None = None,
+        system_prompt: str | None = None,
         prompt_col: str = "prompt",
         image_url_col: str = "image_url",
         image_path_col: str = "file_name",
@@ -97,7 +97,7 @@ class BaseDataset(Dataset):
 class Evaluator:
     """Base class for all evaluators."""
 
-    def __init__(self, system_prompt: str = None):
+    def __init__(self, system_prompt: str | None = None):
         self.system = system_prompt
 
     def __str__(self):
@@ -119,7 +119,7 @@ class Evaluator:
         result_file: Path,
         batch_size: int = 1,
         pad_batches: bool = False,
-        Container: BaseDataset = BaseDataset,
+        Container: type[BaseDataset] = BaseDataset,
         **container_kwargs,
     ):
         """

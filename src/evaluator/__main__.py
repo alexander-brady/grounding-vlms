@@ -8,7 +8,7 @@ from . import load_evaluator
 from .results import create_results
 
 
-@hydra.main(version_base=None, config_path="configs", config_name="config.yaml")
+@hydra.main(version_base="1.3", config_path="configs", config_name="config.yaml")
 def main(cfg: DictConfig):
     """
     Run evaluation on the datasets using the specified model.
@@ -16,7 +16,10 @@ def main(cfg: DictConfig):
         args (argparse.Namespace): The command line arguments.
     """
     load_dotenv()
-    root = Path(__file__).resolve().parent.parent
+    if cfg.get("root_dir", None):
+        root = Path(cfg.root_dir)
+    else:
+        root = Path(__file__).resolve().parent.parent
 
     model = load_evaluator(cfg.model)
     batch_size = cfg.model.get("batch_size", 1)
@@ -33,7 +36,6 @@ def main(cfg: DictConfig):
         model.eval(dataset_path, output_dir / f"{dataset}.csv", batch_size)
 
     create_results(results_dir=output_dir)
-
 
 if __name__ == "__main__":
     main()
