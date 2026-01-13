@@ -25,6 +25,7 @@ dependencies = [
     "torch>=2.9.1",
     "transformers @ git+https://github.com/huggingface/transformers.git",
     "word2number>=1.1",
+    "vllm>=0.10.0"
 ]
 
 [dependency-groups]

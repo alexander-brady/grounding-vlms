@@ -94,6 +94,33 @@ class BaseDataset(Dataset):
         return valid_indices, prompts, invalid_indices
 
 
+class VLLMDataset(BaseDataset):
+    """Dataset that outputs vLLM-compatible message format.
+
+    vLLM requires {"type": "image_pil", "image_pil": ...} instead of
+    HuggingFace's {"type": "image", "image": ...} format.
+    """
+
+    def __getitem__(self, idx):
+        image = self.process_image(idx)
+        if not image:
+            return self.indices[idx], None
+
+        messages = []
+        if self.system:
+            messages.append({"role": "system", "content": self.system[0]["content"][0]["text"]})
+
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "image_pil", "image_pil": image},
+                {"type": "text", "text": self.prompts[idx]},
+            ],
+        })
+
+        return self.indices[idx], messages
+
+
 class Evaluator:
     """Base class for all evaluators."""
 

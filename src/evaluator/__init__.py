@@ -6,6 +6,7 @@ from openai import OpenAI
 from .base import Evaluator
 from .hf_model import HuggingFaceModel
 from .openai_model import OpenAIModel
+from .vllm_model import VLLMGenerateModel, VLLMModel
 
 
 def load_evaluator(model_cfg: DictConfig) -> Evaluator:
@@ -24,6 +25,8 @@ def load_evaluator(model_cfg: DictConfig) -> Evaluator:
         "anthropic": OpenAIModel,
         "xai": OpenAIModel,
         "huggingface": HuggingFaceModel,
+        "vllm": VLLMModel,
+        "vllm_generate": VLLMGenerateModel,
         # Add other models here as needed
     }
 

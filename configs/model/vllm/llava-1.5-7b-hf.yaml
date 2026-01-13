@@ -1,0 +1,14 @@
+engine: vllm_generate
+model: llava-hf/llava-1.5-7b-hf
+system_prompt: >-
+  You are good at counting items in images. Your task is to count the number of items in the image based on the question provided. You should only respond with the integer count, without any additional words or punctuation.
+sampling_params:
+  max_tokens: 20
+  temperature: 0.0
+vllm_params:
+  tensor_parallel_size: 4
+  gpu_memory_utilization: 0.9
+  tokenizer: llava-hf/llava-1.5-7b-hf
+  dtype: bfloat16
+  trust_remote_code: true
+batch_size: 16

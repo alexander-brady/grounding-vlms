@@ -1,6 +1,6 @@
 defaults:
 - _self_
-- model: huggingface/gemma-3-4b-it
+- model: vllm/llava-1.5-7b-hf
 
 datasets:
 - FSC-147
