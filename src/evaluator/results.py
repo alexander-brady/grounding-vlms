@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 EVAL_DIR = BASE_DIR / "eval"
 ANALYSIS_DIR = EVAL_DIR / "analysis"
 DATA_DIR = EVAL_DIR / "datasets"
-RESULTS_DIR = EVAL_DIR / "valid_results"
+RESULTS_DIR = BASE_DIR / "results"
 
 # Ensure analysis folder exists
 ANALYSIS_DIR.mkdir(parents=True, exist_ok=True)
@@ -111,7 +111,7 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
                 if not model_dir.is_dir():
                     continue
 
-                resultFile = model_dir / f"{dataset_name}_results.csv"
+                resultFile = model_dir / f"{dataset_name}.csv"
                 if not resultFile.exists():
                     print(f"Information: Results for {dataset_name} not found in {model_dir.name}")
                     continue
@@ -172,14 +172,14 @@ def create_unified_dataframe(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
     # Check if we have data to save
     if not unified.empty:
         # Ensure output directory exists
-        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        results_dir.mkdir(parents=True, exist_ok=True)
 
         # Create output path with safeguards
-        output_path = RESULTS_DIR / "combinedResults.csv"
+        output_path = results_dir / "combinedResults.csv"
 
         # Backup existing file if it exists
         if output_path.exists():
-            backup_path = RESULTS_DIR / "combinedResults_backup.csv"
+            backup_path = results_dir / "combinedResults_backup.csv"
             os.rename(output_path, backup_path)
             print(f"Existing file backed up to: {backup_path}")
 
@@ -268,8 +268,8 @@ def plot_range_performance(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=10
     out = ANALYSIS_DIR / "plots"
     out.mkdir(exist_ok=True, parents=True)
 
-    for data_path in data_dir.glob("*_dataset.csv"):
-        name = data_path.stem.replace("_dataset", "")
+    for data_path in data_dir.glob("*/dataset.csv"):
+        name = data_path.parent.name
         truth = pd.read_csv(data_path)["truth"].astype(int)
         max_val = truth.max()
         bw = int(np.ceil((max_val + 1) / n_bins))
@@ -284,7 +284,7 @@ def plot_range_performance(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=10
         width = 0.8 / len(models)
 
         for i, model_dir in enumerate(models):
-            rf = model_dir / f"{name}_results.csv"
+            rf = model_dir / f"{name}.csv"
             if not rf.exists():
                 continue
 
@@ -323,8 +323,8 @@ def plot_rolling_accuracy(data_dir=DATA_DIR, results_dir=RESULTS_DIR, window=50)
     out = ANALYSIS_DIR / "plots"
     out.mkdir(exist_ok=True, parents=True)
 
-    for data_path in data_dir.glob("*_dataset.csv"):
-        name = data_path.stem.replace("_dataset", "")
+    for data_path in data_dir.glob("*/dataset.csv"):
+        name = data_path.parent.name
         df_truth = pd.read_csv(data_path)["truth"].astype(int)
 
         plt.figure(figsize=(10, 5))
@@ -335,7 +335,7 @@ def plot_rolling_accuracy(data_dir=DATA_DIR, results_dir=RESULTS_DIR, window=50)
         plt.grid(True, linestyle="--", alpha=0.4)
 
         for model_dir in sorted(results_dir.iterdir()):
-            rf = model_dir / f"{name}_results.csv"
+            rf = model_dir / f"{name}.csv"
             if not rf.exists():
                 continue
             df = load_and_merge(data_path, rf)
@@ -354,8 +354,8 @@ def plot_best_stacked(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=25, max
     out = ANALYSIS_DIR / "plots"
     out.mkdir(exist_ok=True, parents=True)
 
-    for data_path in data_dir.glob("*_dataset.csv"):
-        name = data_path.stem.replace("_dataset", "")
+    for data_path in data_dir.glob("*/dataset.csv"):
+        name = data_path.parent.name
         truth = pd.read_csv(data_path)["truth"].astype(int)
         if max_val is None:
             max_val = truth.max()
@@ -373,7 +373,7 @@ def plot_best_stacked(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=25, max
         best_over = pd.Series(0.0, index=labels)
         # Find best accuracy for each bin across all models
         for model_dir in models:
-            rf = model_dir / f"{name}_results.csv"
+            rf = model_dir / f"{name}.csv"
             if not rf.exists():
                 continue
             df = load_and_merge(data_path, rf)
@@ -445,7 +445,7 @@ def plot_best_models_per_bin(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=
     out.mkdir(exist_ok=True, parents=True)
     # Find global max value and create bins
     all_max_val = 0
-    for data_path in data_dir.glob("*_dataset.csv"):
+    for data_path in data_dir.glob("*/dataset.csv"):
         truth = pd.read_csv(data_path)["truth"].astype(int)
         all_max_val = max(all_max_val, truth.max())
     if max_val is not None:
@@ -457,17 +457,17 @@ def plot_best_models_per_bin(data_dir=DATA_DIR, results_dir=RESULTS_DIR, n_bins=
     all_data = []
     # Process each dataset and model
     datasets_processed = 0
-    for data_path in data_dir.glob("*_dataset.csv"):
+    for data_path in data_dir.glob("*/dataset.csv"):
         truth = pd.read_csv(data_path)["truth"].astype(int)
         # Ensure values beyond max_val are capped
         if max_val is not None:
             truth = truth.clip(upper=max_val)
         binned = pd.cut(truth, bins=bins, labels=labels, right=False)
-        dataset_name = data_path.stem.replace("_dataset", "")
+        dataset_name = data_path.parent.name
         models_processed = 0
         for model_dir in results_dir.iterdir():
             model_name = model_dir.name
-            rf = model_dir / f"{dataset_name}_results.csv"
+            rf = model_dir / f"{dataset_name}.csv"
             if not rf.exists():
                 continue
             df = load_and_merge(data_path, rf)
@@ -1199,16 +1199,16 @@ def create_results(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
 
     create_unified_dataframe(data_dir, results_dir)
     plot_model_accuracies_by_bin(
-        csv_path=RESULTS_DIR / "combinedResults.csv",
+        csv_path=results_dir / "combinedResults.csv",
         bin_width=2,
         value_range=(0, 100),
         log_scale=False,
         minData=10,
         output_path=ANALYSIS_DIR / "plots" / "accuracy_plot.pdf",
     )
-    plot_label_performance(csv_path=RESULTS_DIR / "combinedResults.csv", minData=5, maxTruth=20)
+    plot_label_performance(csv_path=results_dir / "combinedResults.csv", minData=5, maxTruth=20)
     plot_accOverUnder(
-        csv_path=RESULTS_DIR / "combinedResults.csv",
+        csv_path=results_dir / "combinedResults.csv",
         bin_width=10,
         value_range=(0, 500),
         log_scale=False,
@@ -1216,7 +1216,7 @@ def create_results(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
         output_path=ANALYSIS_DIR / "plots" / "accOverUnderPlot.pdf",
     )
     plot_prediction_trends_by_tolerance(
-        csv_path=RESULTS_DIR / "combinedResults.csv",
+        csv_path=results_dir / "combinedResults.csv",
         bin_width=2,
         value_range=(0, 100),
         tolerances=[0, 1, 2, 5],
@@ -1232,9 +1232,13 @@ def create_results(data_dir=DATA_DIR, results_dir=RESULTS_DIR):
 
     results = []
     for model_dir in sorted(results_dir.iterdir()):
-        for rf in model_dir.glob("*_results.csv"):
-            name = rf.stem.replace("_results", "")
-            truth_file = DATA_DIR / f"{name}_dataset.csv"
+        if not model_dir.is_dir():
+            continue
+        for rf in model_dir.glob("*.csv"):
+            name = rf.stem
+            truth_file = DATA_DIR / name / "dataset.csv"
+            if not truth_file.exists():
+                continue
             df = load_and_merge(truth_file, rf)
             df = df[df["result"] != -1]  # Filter out rows where result is -1
 

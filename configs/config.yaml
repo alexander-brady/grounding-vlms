@@ -5,9 +5,10 @@ defaults:
 datasets:
 - FSC-147
 - GeckoNum
+- PixMo_Count
 - TallyQA
 
 
 hydra:
    job:
-      chdir: true
+      chdir: false

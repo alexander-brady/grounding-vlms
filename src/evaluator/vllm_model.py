@@ -2,7 +2,7 @@ from pathlib import Path
 
 from omegaconf import DictConfig
 from vllm import LLM, SamplingParams
-from vllm.sampling_params import GuidedDecodingParams
+from vllm.sampling_params import StructuredOutputsParams
 
 from .base import Evaluator, VLLMDataset
 from .utils import cfg_to_dict
@@ -22,8 +22,8 @@ class VLLMModel(Evaluator):
         self.model = LLM(model=model_cfg.model, **vllm_params)
 
         sampling_params = cfg_to_dict(model_cfg.get("sampling_params", {}))
-        guided_decoding_params = GuidedDecodingParams(regex=r"^(0|[1-9]\d*)$")
-        self.sampling_params = SamplingParams(**sampling_params, guided_decoding=guided_decoding_params)
+        structured_outputs_params = StructuredOutputsParams(regex=r"^(0|[1-9]\d*)$")
+        self.sampling_params = SamplingParams(**sampling_params, structured_outputs=structured_outputs_params)
 
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         super().eval(dataset_dir, result_file, batch_size, pad_batches=False, Container=VLLMDataset)
@@ -49,8 +49,8 @@ class VLLMGenerateModel(Evaluator):
         self.model = LLM(model=model_cfg.model, **vllm_params)
 
         sampling_params = cfg_to_dict(model_cfg.get("sampling_params", {}))
-        guided_decoding_params = GuidedDecodingParams(regex=r"^(0|[1-9]\d*)$")
-        self.sampling_params = SamplingParams(**sampling_params, guided_decoding=guided_decoding_params)
+        structured_outputs_params = StructuredOutputsParams(regex=r"^(0|[1-9]\d*)$")
+        self.sampling_params = SamplingParams(**sampling_params, structured_outputs=structured_outputs_params)
 
         self.prompt_template = model_cfg.get("prompt_template", self.DEFAULT_PROMPT_TEMPLATE)
 

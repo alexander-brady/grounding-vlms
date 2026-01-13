@@ -8,7 +8,7 @@ from . import load_evaluator
 from .results import create_results
 
 
-@hydra.main(version_base="1.3", config_path="configs", config_name="config.yaml")
+@hydra.main(version_base="1.3", config_path="../../configs", config_name="config.yaml")
 def main(cfg: DictConfig):
     """
     Run evaluation on the datasets using the specified model.
@@ -25,6 +25,8 @@ def main(cfg: DictConfig):
     batch_size = cfg.model.get("batch_size", 1)
 
     output_dir = Path(cfg.get("output_dir", "."))
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
     for dataset in cfg.datasets:
         dataset = dataset.strip()
         dataset_path = root / "eval" / "datasets" / dataset.replace(".csv", "")
@@ -35,7 +37,8 @@ def main(cfg: DictConfig):
         print(f"Evaluating on {dataset}...", flush=True)
         model.eval(dataset_path, output_dir / f"{dataset}.csv", batch_size)
 
-    create_results(results_dir=output_dir)
+    # Pass the parent results directory (results/) not the model subdirectory (results/model_name/)
+    create_results(results_dir=output_dir.parent)
 
 
 if __name__ == "__main__":

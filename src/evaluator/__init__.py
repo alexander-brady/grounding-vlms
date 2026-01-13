@@ -6,13 +6,7 @@ from openai import OpenAI
 from .base import Evaluator
 from .hf_model import HuggingFaceModel
 from .openai_model import OpenAIModel
-
-try:
-    from .vllm_model import VLLMGenerateModel, VLLMModel
-except ImportError:
-    VLLMGenerateModel = VLLMModel = lambda *args, **kwargs: (_ for _ in ()).throw(
-        ImportError("vLLM is not installed. Please install vLLM to use VLLMModel or VLLMGenerateModel.")
-    )
+from .vllm_model import VLLMGenerateModel, VLLMModel
 
 
 def load_evaluator(model_cfg: DictConfig) -> Evaluator:
@@ -41,19 +35,22 @@ def load_evaluator(model_cfg: DictConfig) -> Evaluator:
             f"Backend '{model_cfg.engine}' is not supported. Available backends: {', '.join(model_map.keys())}."
         )
 
-    engine_params = {
-        "openai": {"client": OpenAI()},
-        "google": {
+    engine_params = {}
+    if model_cfg.engine == "openai":
+        engine_params = {"client": OpenAI()}
+    elif model_cfg.engine == "google":
+        engine_params = {
             "client": OpenAI(
                 api_key=os.getenv("GEMINI_API_KEY"), base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
             ),
             "force_download": True,
-        },
-        "anthropic": {
+        }
+    elif model_cfg.engine == "anthropic":
+        engine_params = {
             "client": OpenAI(api_key=os.getenv("ANTHROPIC_API_KEY"), base_url="https://api.anthropic.com/v1/"),
             "structured_output": False,
-        },
-        "xai": {"client": OpenAI(api_key=os.getenv("XAI_API_KEY"), base_url="https://api.x.ai/v1")},
-    }.get(model_cfg.engine, {})
+        }
+    elif model_cfg.engine == "xai":
+        engine_params = {"client": OpenAI(api_key=os.getenv("XAI_API_KEY"), base_url="https://api.x.ai/v1")}
 
     return model_map[model_cfg.engine](**engine_params, model_cfg=model_cfg)
