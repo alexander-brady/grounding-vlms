@@ -1,6 +1,7 @@
 # Virtual Environments
 venv/
 .venv/
+.count_venv/
 
 # Environment variables
 .env
