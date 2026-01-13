@@ -6,7 +6,13 @@ from openai import OpenAI
 from .base import Evaluator
 from .hf_model import HuggingFaceModel
 from .openai_model import OpenAIModel
-from .vllm_model import VLLMGenerateModel, VLLMModel
+
+try:
+    from .vllm_model import VLLMGenerateModel, VLLMModel
+except ImportError:
+    VLLMGenerateModel = VLLMModel = lambda *args, **kwargs: (_ for _ in ()).throw(
+        ImportError("vLLM is not installed. Please install vLLM to use VLLMModel or VLLMGenerateModel.")
+    )
 
 
 def load_evaluator(model_cfg: DictConfig) -> Evaluator:

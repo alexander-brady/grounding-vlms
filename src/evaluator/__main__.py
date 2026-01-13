@@ -37,5 +37,6 @@ def main(cfg: DictConfig):
 
     create_results(results_dir=output_dir)
 
+
 if __name__ == "__main__":
     main()

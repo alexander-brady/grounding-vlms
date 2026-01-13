@@ -110,13 +110,15 @@ class VLLMDataset(BaseDataset):
         if self.system:
             messages.append({"role": "system", "content": self.system[0]["content"][0]["text"]})
 
-        messages.append({
-            "role": "user",
-            "content": [
-                {"type": "image_pil", "image_pil": image},
-                {"type": "text", "text": self.prompts[idx]},
-            ],
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_pil", "image_pil": image},
+                    {"type": "text", "text": self.prompts[idx]},
+                ],
+            }
+        )
 
         return self.indices[idx], messages
 
