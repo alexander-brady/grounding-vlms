@@ -675,18 +675,20 @@ def plot_label_performance(csv_path, minData=5, maxTruth=20):
     grouped_by_truth_label = df_filtered.groupby(["truth", "label"])
 
     # Calculate accuracy metrics across all models for each truth-label combination
-    label_accuracy = grouped_by_truth_label.apply(
-        lambda g: pd.Series(
+    def calc_metrics(g):
+        t_val = g["truth"].iloc[0] if "truth" in g.columns else g.name[0]
+        return pd.Series(
             {
                 "count": len(g),
-                "exact_match_rate": (g["truth"] == g["model_result"]).mean(),
-                "within_one_rate": (abs(g["truth"] - g["model_result"]) <= 1).mean(),
-                "mean_abs_error": abs(g["truth"] - g["model_result"]).mean(),
+                "exact_match_rate": (t_val == g["model_result"]).mean(),
+                "within_one_rate": (abs(t_val - g["model_result"]) <= 1).mean(),
+                "mean_abs_error": abs(t_val - g["model_result"]).mean(),
                 "std_dev": g["model_result"].std(),
                 "num_models": g["model"].nunique(),  # Count unique models in this group
             }
         )
-    ).reset_index()
+
+    label_accuracy = grouped_by_truth_label.apply(calc_metrics).reset_index()
 
     # Sort by truth value for easier analysis
     label_accuracy = label_accuracy.sort_values(["truth", "label"])
