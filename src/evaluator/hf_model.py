@@ -16,9 +16,9 @@ class HuggingFaceModel(Evaluator):
             model_cfg (DictConfig): The configuration for the model.
         """
         super().__init__(model_cfg.get("system_prompt", None))
-        self.model = pipeline("image-text-to-text", model=model_cfg.model, device_map="auto", torch_dtype="auto")
+        self.model = pipeline("image-text-to-text", model=model_cfg.model, device_map="auto", dtype="auto")
 
-        self.params = cfg_to_dict(model_cfg.get("params", {}))
+        self.params = cfg_to_dict(model_cfg.get("params", None))
 
     def eval(self, dataset_dir: Path, result_file: Path, batch_size: int = 1):
         super().eval(dataset_dir, result_file, batch_size, pad_batches=True)

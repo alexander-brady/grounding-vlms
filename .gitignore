@@ -30,3 +30,6 @@ images/
 results/
 valid_results/
 analysis/
+
+# Logs
+logs/
